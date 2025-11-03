@@ -1,9 +1,11 @@
 package com.kit.kitbot.service;
 
+import com.kit.kitbot.document.Query;
 import com.kit.kitbot.dto.QueryRequestDTO;
 import com.kit.kitbot.dto.QueryResponseDTO;
 import com.kit.kitbot.dto.SourceDTO;
 //import com.kit.kitbot.client.RAGServerClient; // (가상) FastAPI 통신
+import com.kit.kitbot.repository.Query.QueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List; // List 임포트
@@ -12,9 +14,9 @@ import java.util.List; // List 임포트
 @RequiredArgsConstructor
 public class QnaService {
 
-//    private final RAGServerClient ragServerClient;
-    // ... (RedisClient, ChatQuestionRepository 등)
+    private final QueryRepository queryRepository;
 
+//    private final RAGServerClient ragServerClient;
     public QueryResponseDTO processQuestion(QueryRequestDTO requestDTO) {
 
         // RAGResponseDTO ragResponse = ragServerClient.processQuestion(requestDTO.getQuestion());
@@ -27,7 +29,8 @@ public class QnaService {
 
         // QueryResponseDTO response = new QueryResponseDTO(ragResponse.getAnswer(), ragResponse.getSources());
 
-
+        Query toSave = new Query(requestDTO.getQuestion(), requestDTO.getLang());
+        queryRepository.save(toSave);
         QueryResponseDTO response = new QueryResponseDTO(mockAnswer, mockSources);
 
         // logKeywords(ragResponse.getKeywords());
