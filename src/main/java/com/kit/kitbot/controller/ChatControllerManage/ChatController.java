@@ -1,4 +1,4 @@
-package com.kit.kitbot.controller;
+package com.kit.kitbot.controller.ChatControllerManage;
 
 import com.kit.kitbot.dto.QueryRequestDTO;
 import com.kit.kitbot.dto.QueryResponseDTO;
