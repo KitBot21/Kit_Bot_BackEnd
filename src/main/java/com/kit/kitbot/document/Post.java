@@ -27,7 +27,7 @@ public class Post {
 
     /** 작성자 ID (users 컬렉션 FK) */
     @Indexed
-    private Long authorId;
+    private String authorId;
 
     /** 게시물 제목 */
     private String title;
