@@ -58,6 +58,18 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         mongoTemplate.updateFirst(q, u, Post.class);
     }
 
+    /** 관리자: 언블라인드 처리 */
+    @Override
+    public void unblind(String postId) {
+        Query q = byId(postId);
+        Update u = new Update()
+                .set("status", Status.ACTIVE)
+                .set("blindedAt", null)
+                .set("blindedReason", null)
+                .set("updatedAt", Instant.now());
+        mongoTemplate.updateFirst(q, u, Post.class);
+    }
+
     /* ===== private helpers ===== */
     /* 공통 로직: 추천, 신고, 댓글 수 업데이트에 사용 */
     private void updateCounter(String postId, String field, int delta) {

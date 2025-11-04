@@ -19,4 +19,7 @@ public interface PostRepositoryCustom {
 
     /** 블라인드 처리 (관리자가 게시글을 블라인드 처리할 때 사용)*/
     void blind(String postId, String reason, Instant blindedAt);
+
+    /** 언블라인드 처리 (관리자) */
+    void unblind(String postId);
 }
