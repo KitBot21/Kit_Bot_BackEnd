@@ -57,5 +57,12 @@ public class CommentController {
         return ResponseEntity.ok().build();
     }
 
+    // 댓글 삭제
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable String commentId) {
+        // TODO: 로그인 구현 후 실제 사용자 ID 사용
+        commentService.deleteComment(commentId, TEMP_USER_ID);
+        return ResponseEntity.ok().build();
+    }
 
 }
