@@ -1,14 +1,12 @@
 package com.kit.kitbot.service;
 
-import com.kit.kitbot.document.Comment;
-import com.kit.kitbot.document.CommentReport;
-import com.kit.kitbot.document.CommentRecommend;
-import com.kit.kitbot.document.User;
+import com.kit.kitbot.document.*;
 import com.kit.kitbot.dto.CommentRequest;
 import com.kit.kitbot.dto.CommentResponseDTO;
 import com.kit.kitbot.repository.Post.CommentRecommendRepository;
 import com.kit.kitbot.repository.Post.CommentReportRepository;
 import com.kit.kitbot.repository.Post.CommentRepository;
+import com.kit.kitbot.repository.Post.PostRepository;
 import com.kit.kitbot.repository.User.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +23,7 @@ public class CommentService {
     private final UserRepository userRepository;
     private final CommentReportRepository commentReportRepository;
     private final CommentRecommendRepository commentRecommendRepository;
+    private final PostRepository postRepository;
 
     public CommentResponseDTO createComment(CommentRequest request, String userId) {
         if (request.getParentId() != null) {
@@ -46,10 +45,14 @@ public class CommentService {
 
         Comment saved = commentRepository.save(comment);
 
+        Post post = postRepository.findById(request.getPostId())
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
+        post.setCommentCount(post.getCommentCount() + 1);
+        postRepository.save(post);
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다"));
 
-        // 추천/신고 여부 확인
         boolean isRecommended = commentRecommendRepository
                 .findByCommentIdAndUserId(saved.getId(), userId) != null;
 
@@ -154,6 +157,34 @@ public class CommentService {
         commentReportRepository.save(report);
         comment.setReportCount(comment.getReportCount() + 1);
         commentRepository.save(comment);
+    }
+
+    // 댓글 삭제
+    public void deleteComment(String commentId, String userId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("댓글을 찾을 수 없습니다"));
+
+        // TODO: 로그인 구현 후 권한 확인 활성화
+        // 권한 확인 (본인의 댓글만 삭제 가능)
+        // if (!comment.getAuthorId().equals(userId)) {
+        //     throw new RuntimeException("댓글 삭제 권한이 없습니다");
+        // }
+
+        // 이미 삭제된 댓글인지 확인
+        if ("deleted".equals(comment.getStatus())) {
+            throw new RuntimeException("이미 삭제된 댓글입니다");
+        }
+
+        // 소프트 삭제 (status를 deleted로 변경)
+        comment.setStatus("deleted");
+        comment.setUpdatedAt(LocalDateTime.now());
+        commentRepository.save(comment);
+
+        // 게시글의 댓글 수 감소
+        Post post = postRepository.findById(comment.getPostId())
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
+        post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
+        postRepository.save(post);
     }
 
 }
