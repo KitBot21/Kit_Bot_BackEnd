@@ -18,7 +18,7 @@ public interface PostRepository extends MongoRepository<Post, String>, PostRepos
     Page<Post> findByStatusIn(Collection<Status> statuses, Pageable pageable);
 
     /** 작성자별 목록 (마이페이지에서 사용) */
-    Page<Post> findByAuthorIdAndStatusIn(Long authorId, Collection<Status> statuses, Pageable pageable);
+    Page<Post> findByAuthorIdAndStatusIn(String authorId, Collection<Status> statuses, Pageable pageable);
 
     /** 제목 키워드 검색(간단 버전) */
     Page<Post> findByTitleRegexAndStatusIn(String titleRegex, Collection<Status> statuses, Pageable pageable);

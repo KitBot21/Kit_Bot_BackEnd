@@ -11,6 +11,8 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    /* ===== dev 프로파일: MockUserFilter 활성화 & Swagger 허용 ===== */
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
