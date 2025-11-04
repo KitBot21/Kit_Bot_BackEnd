@@ -4,13 +4,15 @@ package com.kit.kitbot.repository.Post;
 import com.kit.kitbot.document.Post;
 import com.kit.kitbot.document.Post.Status;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.*;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
@@ -68,6 +70,30 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                 .set("blindedReason", null)
                 .set("updatedAt", Instant.now());
         mongoTemplate.updateFirst(q, u, Post.class);
+    }
+
+    /* ===== 커서 기반 조회 구현 (무한 스크롤용) ===== */
+    @Override
+    public List<Post> findCursor(Set<Status> statuses, Instant after, int limit, String keyword) {
+        List<Criteria> ands = new ArrayList<>();
+        ands.add(Criteria.where("status").in(statuses));
+
+        if (after != null) {
+            // after 보다 "더 과거" 데이터(스크롤 다운) = createdAt < after
+            ands.add(Criteria.where("createdAt").lt(after));
+        }
+
+        if (keyword != null && !(keyword = keyword.trim()).isBlank()) {
+            // 제목에 keyword 포함 (대소문자 무시)
+            ands.add(Criteria.where("title").regex(keyword, "i"));
+        }
+
+        Query q = new Query(new Criteria().andOperator(ands.toArray(new Criteria[0])))
+                // 안정 정렬: createdAt DESC, _id DESC
+                .with(Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "_id")))
+                .limit(limit);
+
+        return mongoTemplate.find(q, Post.class);
     }
 
     /* ===== private helpers ===== */

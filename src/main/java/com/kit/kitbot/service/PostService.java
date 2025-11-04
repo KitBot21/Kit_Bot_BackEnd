@@ -4,6 +4,7 @@ import com.kit.kitbot.document.Post;
 import com.kit.kitbot.document.Post.Status;
 import com.kit.kitbot.dto.Post.PostRequestDTO;
 import com.kit.kitbot.dto.Post.PostResponseDTO;
+import com.kit.kitbot.dto.Post.CursorListResponseDTO; // 게시글 무한 스크롤 추가
 import com.kit.kitbot.repository.Post.PostRepository;
 import com.kit.kitbot.document.reaction.PostRecommend;
 import com.kit.kitbot.document.reaction.PostReport;
@@ -21,6 +22,8 @@ import org.springframework.dao.DuplicateKeyException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,64 @@ public class PostService {
     private final PostRecommendRepository postRecommendRepository;
     private final PostReportRepository postReportRepository;
     private static final int REPORTS_TO_BLIND = 10; // 블라인드 처리 신고 개수 10
+    // ====== 커서 기반 무한 스크롤 관련 상수/헬퍼 추가 ======
+    private static final int DEFAULT_LIMIT = 10;
+    private static final int MAX_LIMIT = 50;
+
+    /* 게시글 무한 스크롤용 메서드 */
+    private int normalizeLimit(Integer limit) {
+        if (limit == null) return DEFAULT_LIMIT;
+        if (limit < 1) return 1;
+        return Math.min(limit, MAX_LIMIT);
+    }
+
+    private Instant parseAfter(String afterIso8601) {
+        if (afterIso8601 == null || afterIso8601.isBlank()) return null;
+        // 잘못된 포맷이면 400을 던질 수도 있지만, 여기서는 IllegalArgument로 통일
+        try {
+            return Instant.parse(afterIso8601.trim());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("after 커서 형식이 올바르지 않습니다(ISO-8601 필요): " + afterIso8601);
+        }
+    }
+
+    private String safeNextCursor(List<Post> rows, boolean hasNext) {
+        if (!hasNext || rows.isEmpty()) return null;
+        // 마지막 아이템의 createdAt을 다음 커서로 사용
+        Instant last = rows.get(rows.size() - 1).getCreatedAt();
+        return last != null ? last.toString() : null;
+    }
+
+    // ====== 무한 스크롤(커서) 목록 메서드 추가 ======
+    /**
+     * 최신순(createdAt DESC, _id DESC)으로 ACTIVE 글을 커서 기반으로 조회
+     * 첫 호출은 after=null로 호출, 이후 응답의 nextCursor로 이어서 호출
+     */
+    public CursorListResponseDTO<PostResponseDTO> getPostsCursor(String keyword, String after, Integer limit) {
+        final int take = normalizeLimit(limit);
+        final Instant afterTs = parseAfter(after);
+        final Set<Status> statuses = EnumSet.of(Status.ACTIVE);
+
+        // 서비스에서 +1로 조회하여 hasNext 판정
+        final int querySize = take + 1;
+        final String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+
+        List<Post> rows = postRepository.findCursor(statuses, afterTs, querySize, kw);
+
+        boolean hasNext = rows.size() > take;
+        if (hasNext) {
+            rows = rows.subList(0, take);
+        }
+
+        String nextCursor = safeNextCursor(rows, hasNext);
+
+        List<PostResponseDTO> items = rows.stream()
+                .map(PostResponseDTO::from)
+                .collect(Collectors.toList());
+
+        return new CursorListResponseDTO<>(items, nextCursor, hasNext);
+    }
+    // ===============================================
 
     /** 게시글 상세 조회 */
     public Optional<PostResponseDTO> getPost(String id, Collection<Status> statuses) {
