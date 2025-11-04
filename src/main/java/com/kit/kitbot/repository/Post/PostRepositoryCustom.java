@@ -1,7 +1,12 @@
 // src/main/java/com/kit/kitbot/repository/PostRepositoryCustom.java
 package com.kit.kitbot.repository.Post;
 
+import com.kit.kitbot.document.Post;
+import com.kit.kitbot.document.Post.Status;
+
 import java.time.Instant;
+import java.util.List;
+import java.util.Set;
 
 public interface PostRepositoryCustom {
 
@@ -22,4 +27,12 @@ public interface PostRepositoryCustom {
 
     /** 언블라인드 처리 (관리자) */
     void unblind(String postId);
+
+    /* ===== 커서 기반 조회(무한 스크롤) ===== */
+    /**
+     * 상태 집합(statuses) 필터 + (옵션) after createdAt 기준 + (옵션) 제목 keyword
+     * 최신순(createdAt DESC, _id DESC)으로 limit개 가져온다.
+     * hasNext 판정은 서비스에서 limit+1 규칙으로 처리 권장.
+     */
+    List<Post> findCursor(Set<Status> statuses, Instant after, int limit, String keyword);
 }

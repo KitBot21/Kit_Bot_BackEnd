@@ -7,6 +7,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.IndexDirection;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.*;
 
 import java.time.Instant;
 
@@ -19,6 +20,12 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "posts")
+@CompoundIndexes({
+        @CompoundIndex(
+                name = "idx_status_createdAt_id",
+                def = "{'status': 1, 'createdAt': -1, '_id': -1}"
+        )
+})
 public class Post {
 
     /** 내부 식별자 PK */
