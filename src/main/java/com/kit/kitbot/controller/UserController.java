@@ -53,4 +53,25 @@ public class UserController {
         String actualToken = token.replace("Bearer ", "");
         return jwtTokenProvider.getUserIdFromToken(actualToken);
     }
+
+    @PostMapping("/push-token")
+    public ResponseEntity<String> updatePushToken(
+            @RequestHeader("Authorization") String token,
+            @RequestBody Map<String, String> requestBody
+    ) {
+        // 1. 토큰에서 유저 ID 추출 (기존 헬퍼 메서드 재사용)
+        String userId = getUserIdFromToken(token);
+
+        // 2. Body에서 푸시 토큰 꺼내기
+        String pushToken = requestBody.get("pushToken");
+
+        if (pushToken == null || pushToken.isEmpty()) {
+            return ResponseEntity.badRequest().body("토큰이 없습니다.");
+        }
+
+        // 3. 서비스 호출
+        userService.updatePushToken(userId, pushToken);
+
+        return ResponseEntity.ok("푸시 토큰이 저장되었습니다.");
+    }
 }
