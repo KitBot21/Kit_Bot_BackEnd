@@ -13,22 +13,24 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
+import java.util.Collections;
 import java.util.Arrays;
+
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class GoogleAuthService {
 
+
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Value("${google.client-id.android}")
     private String androidClientId;
+    private final String WEB_CLIENT_ID = "358721642016-j5hcv6tjn6rvu04hk65qokap8hulhlgv.apps.googleusercontent.com";
 
-    @Value("${google.client-id.ios}")
-    private String iosClientId;
+
 
     public AuthResponse loginWithGoogle(String idToken) {
         try {
@@ -74,7 +76,7 @@ public class GoogleAuthService {
                 new NetHttpTransport(),
                 new GsonFactory()
         )
-                .setAudience(Arrays.asList(androidClientId, iosClientId))
+                .setAudience(Arrays.asList(androidClientId,  WEB_CLIENT_ID))
                 .build();
 
         GoogleIdToken googleIdToken = verifier.verify(idToken);

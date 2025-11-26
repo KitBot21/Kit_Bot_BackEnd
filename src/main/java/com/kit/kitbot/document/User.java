@@ -27,6 +27,7 @@ public class User {
     private Instant createdAt;
     private String locale;
     private String profileImg;
+    private String pushToken;
 
     public enum Role { guest, kumoh, admin }
     public enum Status { active, blocked, deleted }

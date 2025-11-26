@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+google-trans-key.json
+src/main/resources/google-trans-key.json

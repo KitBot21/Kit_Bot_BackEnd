@@ -49,4 +49,12 @@ public class UserService {
     public boolean isUsernameAvailable(String username) {
         return !userRepository.existsByUsername(username);
     }
+
+    public void updatePushToken(String userId, String pushToken){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        user.setPushToken(pushToken);
+        userRepository.save(user);
+        log.info("푸시 토큰 업데이트 완료: userId={}", userId);    }
 }

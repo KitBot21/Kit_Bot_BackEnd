@@ -4,6 +4,7 @@ import com.kit.kitbot.security.JwtAuthenticationFilter; // [중요] 필터 impor
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -31,15 +32,29 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/chat/**").permitAll() // [수정] caht -> chat 오타 수정!
-                        .requestMatchers("/api/posts/**").authenticated() // 게시글은 로그인 필요
+                        // 1. 누구나 접근 가능한 곳 (로그인, 회원가입, 에러, 스웨거)
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/user/username/check").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+                        // 2. 채팅 (오타 수정됨: caht -> chat)
+                        .requestMatchers("/chat/**").permitAll()
+
+                        // 👇 [핵심 변경] 게시판 권한 분리
+                        // (1) 조회(GET)는 "로그인한 누구나" (guest 포함) 가능
+                        .requestMatchers(HttpMethod.GET, "/api/posts/**").authenticated()
+
+                        // (2) 작성(POST), 수정(PUT), 삭제(DELETE)는 "kumoh" 또는 "admin" 권한만 가능
+                        // 주의: User Enum이 소문자(guest, kumoh)이므로 권한 이름도 소문자로 적어야 함
+                        .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyAuthority("kumoh", "admin")
+                        .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyAuthority("kumoh", "admin")
+                        .requestMatchers(HttpMethod.DELETE, "/api/posts/**").hasAnyAuthority("kumoh", "admin")
+
+                        // 3. 그 외 나머지 모든 요청은 로그인만 되어 있으면 됨
                         .anyRequest().authenticated()
                 )
-                // [추가] ⭐ 가장 중요한 부분! 문지기를 실제로 배치하는 코드
-                // "ID/PW 검사하는 기본 필터(UsernamePassword...) 앞에서, 우리 JWT 경비원이 먼저 검사하게 해라"
+                // JWT 필터 추가
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
