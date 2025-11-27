@@ -9,4 +9,5 @@ import java.util.List;
 public class QueryResponseDTO {
     private String answer;
     private List<SourceDTO> sources;
+    private boolean isDate;
 }
