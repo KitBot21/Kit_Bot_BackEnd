@@ -54,7 +54,7 @@ public class GoogleAuthService {
                     });
 
             // 4단계: 우리 서비스의 JWT 토큰 생성
-            String accessToken = jwtTokenProvider.createToken(user.getId(), user.getGoogleEmail());
+            String accessToken = jwtTokenProvider.createToken(user.getId(), user.getGoogleEmail(), user.getRole().name());
 
             log.info("로그인 성공: userId={}", user.getId());
 
