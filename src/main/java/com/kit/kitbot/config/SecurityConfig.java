@@ -38,6 +38,9 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
+                        // 🔹 (추가) 관리자 정적 페이지(HTML/CSS/JS)는 모두 열어둠
+                        .requestMatchers("/admin/**").permitAll()
+
 
                         // 1-1. 실시간 인기 질문 키워드 (개발용 hit + 조회)
                         .requestMatchers("/api/popular/answer-keywords").permitAll()
