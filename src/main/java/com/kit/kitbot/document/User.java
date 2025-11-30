@@ -60,4 +60,12 @@ public class User {
     public boolean hasUsername() {
         return username != null && !username.trim().isEmpty();
     }
+
+    public void block() {
+        this.status = Status.blocked;
+    }
+
+    public void activate() {
+        this.status = Status.active;
+    }
 }
