@@ -3,85 +3,84 @@ package com.kit.kitbot.service;
 import com.kit.kitbot.document.NoticeKeyword;
 import com.kit.kitbot.document.NoticeKeywordSubscription;
 import com.kit.kitbot.document.Notification;
+import com.kit.kitbot.dto.crawl.CrawlerRequestDTO;
 import com.kit.kitbot.repository.Notice.NoticeKeywordSubscriptionRepository;
 import com.kit.kitbot.repository.Notice.NotificationRepository;
+import com.kit.kitbot.repository.User.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NoticeKeywordNotifyService {
 
     private final NoticeKeywordSubscriptionRepository subRepo;
     private final NotificationRepository notificationRepo;
-    private final PushSender pushSender;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
-    /**
-     * "새 공지"가 크롤링되어 DB에 저장된 직후 호출되는 메서드
-     * @param noticeId 크롤링 공지 ID
-     * @param title 공지 제목
-     * @param content 공지 본문(또는 요약)
-     */
-    public void notifySubscribers(String noticeId, String title, String content) {
-        String text = normalize(title + " " + content);
+    @Transactional
+    public void notifySubscribers(CrawlerRequestDTO request) {
+        try {
+            NoticeKeyword keywordEnum = NoticeKeyword.valueOf(request.getKeyword().toUpperCase());
 
-        for (NoticeKeyword kw : NoticeKeyword.values()) {
-            if (!matches(text, kw)) continue;
-
-            // 해당 키워드 구독자(enabled=true) 조회
             List<NoticeKeywordSubscription> subs =
-                    subRepo.findByKeywordAndEnabledTrue(kw);
+                    subRepo.findByKeywordAndEnabledTrue(keywordEnum);
 
+            if (subs.isEmpty()) {
+                log.info("'{}' 키워드 구독자가 없어 알림을 건너뜁니다.", keywordEnum);
+                return;
+            }
+
+            int count = 0;
             for (NoticeKeywordSubscription sub : subs) {
                 String userId = sub.getUserId();
 
-                // 중복 알림 방지
-                boolean already =
-                        notificationRepo.existsByUserIdAndNoticeIdAndKeyword(
-                                userId, noticeId, kw.name()
-                        );
-                if (already) continue;
+                userRepository.findByGoogleEmail(userId).ifPresentOrElse(
+                        user -> {
+                            String pushToken = user.getPushToken();
+                            log.info("유저 찾음! email: {}, pushToken: {}", userId, pushToken);
 
-                // 알림 기록 생성
-                Notification n = notificationRepo.save(Notification.builder()
-                        .userId(userId)
-                        .type("NOTICE_KEYWORD_MATCH")
-                        .keyword(kw.name())
-                        .noticeId(noticeId)
-                        .title(title)
-                        .pushed(false)
-                        .read(false)
-                        .build());
+                            if (pushToken != null && !pushToken.isEmpty()) {
+                                boolean sent = notificationService.sendPush(
+                                        pushToken,
+                                        "🔔 [" + keywordEnum.name() + "] 새 공지 알림",
+                                        request.getTitle(),
+                                        request.getUrl()
+                                );
 
-                // 푸시 전송
-                boolean ok = pushSender.sendNoticeKeywordPush(userId, kw, noticeId, title);
-
-                if (ok) {
-                    n.markPushed();
-                    notificationRepo.save(n);
-                }
+                                if (sent) {
+                                    notificationRepo.save(Notification.builder()
+                                            .userId(userId)
+                                            .type("NOTICE_KEYWORD")
+                                            .keyword(keywordEnum.name())
+                                            .noticeId(request.getUrl())
+                                            .title(request.getTitle())
+                                            .pushed(true)
+                                            .read(false)
+                                            .build());
+                                }
+                            } else {
+                                log.warn("유저 pushToken이 없음: {}", userId);
+                            }
+                        },
+                        () -> {
+                            log.warn("유저를 찾을 수 없음: {}", userId);
+                        }
+                );
+                count++;
             }
+            log.info("총 {}명에게 '{}' 알림 발송 완료", count, keywordEnum);
+
+        } catch (IllegalArgumentException e) {
+            log.error("잘못된 키워드가 수신되었습니다: {}", request.getKeyword());
+        } catch (Exception e) {
+            log.error("알림 발송 중 에러 발생", e);
         }
-    }
-
-    // ---------------- 내부 유틸 ----------------
-
-    private String normalize(String s) {
-        if (s == null) return "";
-        return s.toLowerCase()
-                .replaceAll("\\s+", ""); // 공백 제거
-    }
-
-    /** 고정 5개 키워드라 룰 기반 contains로 MVP */
-    private boolean matches(String text, NoticeKeyword kw) {
-        return switch (kw) {
-            case SCHOLARSHIP -> text.contains("장학");
-            case COURSE      -> text.contains("수강") || text.contains("학사") || text.contains("등록");
-            case DORM        -> text.contains("생활관") || text.contains("기숙사");
-            case EVENT       -> text.contains("행사") || text.contains("특강") || text.contains("세미나");
-            case EMPLOYMENT  -> text.contains("취업") || text.contains("인턴") || text.contains("채용");
-        };
     }
 }

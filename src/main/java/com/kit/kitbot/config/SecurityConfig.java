@@ -40,6 +40,7 @@ public class SecurityConfig {
 
                         // 2. 채팅 (오타 수정됨: caht -> chat)
                         .requestMatchers("/chat/**").permitAll()
+                        .requestMatchers("/api/crawler/**").permitAll()
 
                         // 👇 [핵심 변경] 게시판 권한 분리
                         // (1) 조회(GET)는 "로그인한 누구나" (guest 포함) 가능

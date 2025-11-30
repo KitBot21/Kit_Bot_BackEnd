@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -28,6 +29,7 @@ public class User {
     private String locale;
     private String profileImg;
     private String pushToken;
+    private List<String> keywords;
 
     public enum Role { guest, kumoh, admin }
     public enum Status { active, blocked, deleted }
