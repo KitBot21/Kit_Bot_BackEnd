@@ -15,46 +15,65 @@ import java.util.Set;
 @Service
 public class AnswerKeywordStatService {
 
+    // Redis 키 prefix: popular:ans-keyword:YYYYMMDD
+    private static final String KEY_PREFIX = "popular:ans-keyword:";
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMdd");
+
+    // 하루 단위 통계지만, 여유 있게 7일 TTL
+    private static final Duration TTL = Duration.ofDays(7);
+
     private final StringRedisTemplate redisTemplate;
-    private static final DateTimeFormatter DAY_FMT =
-            DateTimeFormatter.BASIC_ISO_DATE; // yyyyMMdd
 
     public AnswerKeywordStatService(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
+    // 날짜별 Redis 키 생성
     private String buildKey(LocalDate date) {
-        return "popular:ans-keyword:" + date.format(DAY_FMT);
+        return KEY_PREFIX + date.format(DATE_FORMAT);
     }
 
     /**
-     * 답변에서 온 "원본 키워드들"을 받아
-     * 전처리 후 Redis Sorted Set에 카운트 올리는 메서드
+     * 🔹 RAG에서 온 "원본 키워드들"을 정규화해서,
+     *    오늘 날짜 기준 ZSET에 카운트(+1) 증가
      */
     public void increaseByRawKeywords(List<String> rawKeywords) {
+        // 1) 정규화 (null, 너무 짧은 문자열 등 필터링)
         List<String> keywords = KeywordNormalizer.normalizeAll(rawKeywords);
-        if (keywords.isEmpty()) return;
-
-        String key = buildKey(LocalDate.now());
-
-        for (String kw : keywords) {
-            redisTemplate.opsForZSet()
-                    .incrementScore(key, kw, 1.0);
+        if (keywords.isEmpty()) {
+            return;
         }
 
-        // 선택: 2일 TTL (원하면 조정/삭제)
-        redisTemplate.expire(key, Duration.ofDays(2));
+        // 2) 오늘 날짜 기준 키
+        String key = buildKey(LocalDate.now());
+        ZSetOperations<String, String> zSet = redisTemplate.opsForZSet();
+
+        // 3) 각 키워드 score +1
+        for (String kw : keywords) {
+            zSet.incrementScore(key, kw, 1.0);
+        }
+
+        // 4) TTL 설정 (이미 TTL 있으면 그대로 두기)
+        Long expire = redisTemplate.getExpire(key);
+        if (expire == null || expire < 0) {
+            redisTemplate.expire(key, TTL);
+        }
     }
 
     /**
-     * 오늘 기준 인기 키워드 Top N 조회
+     * 🔹 오늘 기준 상위 N개 키워드 조회
      */
     public List<PopularKeywordDto> getTodayTop(int limit) {
+        if (limit <= 0) {
+            return List.of();
+        }
+
         String key = buildKey(LocalDate.now());
+        ZSetOperations<String, String> zSet = redisTemplate.opsForZSet();
 
         Set<ZSetOperations.TypedTuple<String>> tuples =
-                redisTemplate.opsForZSet()
-                        .reverseRangeWithScores(key, 0, limit - 1);
+                zSet.reverseRangeWithScores(key, 0, limit - 1);
 
         if (tuples == null || tuples.isEmpty()) {
             return List.of();
