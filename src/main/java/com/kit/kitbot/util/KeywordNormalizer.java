@@ -9,13 +9,23 @@ public class KeywordNormalizer {
     public static Optional<String> normalizeOne(String raw) {
         if (raw == null) return Optional.empty();
 
-        String s = raw.trim();               // 1) 앞뒤 공백 제거
-        s = s.replaceAll("\\s+", " ");       // 2) 중복 공백 하나로
-        s = s.replaceAll("[\"'#<>]", "");    // 3) 불필요 특수문자 제거 (원하면 수정)
+        // 1) 앞뒤 공백 제거
+        String s = raw.trim();
 
-        if (s.length() < 2) {                // 4) 너무 짧으면 버림
+        // 2) 중복 공백 하나로
+        s = s.replaceAll("\\s+", " ");
+
+        // 3) 불필요 특수문자 제거 (원하면 규칙 추가 가능)
+        s = s.replaceAll("[\"'#<>]", "");
+
+        // 4) 영어는 소문자로 통일 (한글엔 영향 없음)
+        s = s.toLowerCase(Locale.ROOT);
+
+        // 5) 너무 짧은 키워드는 버림 (ex: "a", "?" 같은 노이즈)
+        if (s.length() < 2) {
             return Optional.empty();
         }
+
         return Optional.of(s);
     }
 
