@@ -47,6 +47,9 @@ public class SecurityConfig {
                         // 2. 채팅 (오타 수정됨: caht -> chat)
                         .requestMatchers("/chat/**").permitAll()
 
+                        // 3. 관리자 전용 API
+                        .requestMatchers("/api/admin/**").hasAuthority("admin")
+
                         // 👇 [핵심 변경] 게시판 권한 분리
                         // (1) 조회(GET)는 "로그인한 누구나" (guest 포함) 가능
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").authenticated()

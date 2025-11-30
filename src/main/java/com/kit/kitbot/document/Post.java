@@ -78,4 +78,27 @@ public class Post {
         BLINDED,
         DELETED
     }
+
+    // --- 👇 관리자 기능용 도메인 메서드 추가 ---
+
+    /** 게시글 소프트 삭제: 상태를 DELETED로 변경 */
+    public void softDelete() {
+        this.status = Status.DELETED;
+    }
+
+    /** 게시글 블라인드: 상태를 BLINDED로 변경하고 사유/시간 기록 */
+    public void blind(String reason) {
+        this.status = Status.BLINDED;
+        this.blindedAt = Instant.now();
+        this.blindedReason = reason;
+    }
+
+    /** 게시글 언블라인드: BLINDED → ACTIVE, 블라인드 정보 초기화 */
+    public void unblind() {
+        if (this.status == Status.BLINDED) {
+            this.status = Status.ACTIVE;
+            this.blindedAt = null;
+            this.blindedReason = null;
+        }
+    }
 }
