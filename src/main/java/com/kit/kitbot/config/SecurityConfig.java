@@ -49,6 +49,7 @@ public class SecurityConfig {
 
                         // 2. 채팅 (오타 수정됨: caht -> chat)
                         .requestMatchers("/chat/**").permitAll()
+                        .requestMatchers("/api/crawler/**").permitAll()
 
                         // 3. 관리자 전용 API
                         .requestMatchers("/api/admin/**").hasAuthority("admin")
