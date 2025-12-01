@@ -44,6 +44,7 @@ public class SecurityConfig {
 
                         // 1-1. 실시간 인기 질문 키워드 (개발용 hit + 조회)
                         .requestMatchers("/api/popular/answer-keywords").permitAll()
+                        .requestMatchers("/api/popular/answer-keywords/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/popular/hit").permitAll()  // 🔹 개발용
 
 
