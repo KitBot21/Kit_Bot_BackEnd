@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,22 +32,18 @@ public class QnaService {
         String originalQuestion = requestDTO.getQuestion();
         String appLanguage = requestDTO.getAppLanguage();
 
-        // appLanguage 기본값 설정 (null이거나 잘못된 값이면 ko)
         if (appLanguage == null || (!"ko".equals(appLanguage) && !"en".equals(appLanguage))) {
             appLanguage = "ko";
         }
 
-        // 1. [입력 언어 판단] - 한글 포함 여부로 판단
         boolean isKoreanInput = containsKorean(originalQuestion);
         String finalQuestion = originalQuestion;
 
-        // 2. [입력 번역] 영어 입력이면 → 한글로 번역
         if (!isKoreanInput) {
             finalQuestion = translationService.translateText(originalQuestion, "en", "ko");
             log.info("질문 번역됨: {} -> {}", originalQuestion, finalQuestion);
         }
 
-        // 3. [RAG 서버 통신]
         RagResponseDTO ragResponse;
         try {
             ragResponse = ragWebClient.sendQuestion(finalQuestion);
@@ -58,10 +53,9 @@ public class QnaService {
             String errorMsg = "en".equals(appLanguage)
                     ? "Sorry, failed to connect to AI server."
                     : "죄송합니다. AI 서버 연결에 실패했습니다.";
-            return new QueryResponseDTO(errorMsg, new ArrayList<>(), false);
+            return new QueryResponseDTO(errorMsg, new ArrayList<>(), false, null, null, null);
         }
 
-        // 3-1. [실시간 인기 키워드 집계]
         List<String> answerKeywords = new ArrayList<>();
         if (ragResponse.getKeyword() != null && !ragResponse.getKeyword().isBlank()) {
             String keyword = ragResponse.getKeyword();
@@ -69,12 +63,10 @@ public class QnaService {
             answerKeywords.add(keyword);
         }
 
-        // 3-2. [질문 로그 저장]
         String inputLang = isKoreanInput ? "ko" : "en";
         Query toSave = new Query(finalQuestion, inputLang, answerKeywords);
         queryRepository.save(toSave);
 
-        // 4. [데이터 변환] RAG 응답 -> 프론트 응답 DTO
         String aiAnswer = ragResponse.getMessage();
 
         List<String> titles = ragResponse.getSource();
@@ -89,17 +81,23 @@ public class QnaService {
             }
         }
 
-        // 5. [출력 번역] 앱이 영어 모드면 → 영어로 번역
         String finalAnswer = aiAnswer;
         if ("en".equals(appLanguage)) {
             finalAnswer = translationService.translateText(aiAnswer, "ko", "en");
             log.info("답변 번역됨: {} -> {}", aiAnswer, finalAnswer);
         }
 
-        return new QueryResponseDTO(finalAnswer, sources, ragResponse.isDate());
+        // 👇 수정: 새 필드 추가
+        return new QueryResponseDTO(
+                finalAnswer,
+                sources,
+                ragResponse.isDate(),
+                ragResponse.getStartDate(),      // startDate 먼저
+                ragResponse.getEndDate(),        // endDate
+                ragResponse.getScheduleTitle()   // scheduleTitle 마지막
+        );
     }
 
-    // 한글 포함 여부 체크
     private boolean containsKorean(String text) {
         return text.matches(".*[가-힣]+.*");
     }
