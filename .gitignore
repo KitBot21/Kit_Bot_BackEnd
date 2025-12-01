@@ -38,3 +38,4 @@ out/
 
 google-trans-key.json
 src/main/resources/google-trans-key.json
+*.zip

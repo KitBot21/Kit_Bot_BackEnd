@@ -26,13 +26,17 @@ public class RagWebClient {
     public RagResponseDTO sendQuestion(String question) {
         log.info("RAG 서버로 질문 전송: {}", question);
 
-        // Python 서버의 @app.post("/ask") 로 요청
-        return webClient.post()
+        RagResponseDTO response = webClient.post()
                 .uri("/ask")
-                .bodyValue(new RagRequestDTO(question, 5)) // 질문과 topk 설정
+                .bodyValue(new RagRequestDTO(question, 5))
                 .retrieve()
                 .bodyToMono(RagResponseDTO.class)
-                .timeout(Duration.ofSeconds(60)) // AI 생성 시간 고려 (넉넉하게 60초)
-                .block(); // 동기 처리 (답변 올 때까지 대기)
+                .timeout(Duration.ofSeconds(60))
+                .block();
+
+        // 응답 로그 추가
+        log.info("RAG 서버 응답: {}", response);
+
+        return response;
     }
 }

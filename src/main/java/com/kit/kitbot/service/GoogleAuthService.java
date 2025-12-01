@@ -65,7 +65,7 @@ public class GoogleAuthService {
                     .build();
 
         } catch (Exception e) {
-            log.error("Google 로그인 실패", e);
+            log.error("Google 로그인 실패", e)   ;
             throw new RuntimeException("Google 로그인 실패: " + e.getMessage(), e);
         }
     }
