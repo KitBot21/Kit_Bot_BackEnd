@@ -1,5 +1,6 @@
 package com.kit.kitbot.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 import java.util.List;
@@ -9,5 +10,11 @@ import java.util.List;
 public class QueryResponseDTO {
     private String answer;
     private List<SourceDTO> sources;
+
+    @JsonProperty("isDate")  // 👈 추가
     private boolean isDate;
+
+    private String startDate;
+    private String endDate;
+    private String scheduleTitle;
 }

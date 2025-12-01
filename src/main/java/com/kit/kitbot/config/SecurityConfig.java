@@ -37,16 +37,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/user/username/check").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-
-                        // 🔹 (추가) 관리자 정적 페이지(HTML/CSS/JS)는 모두 열어둠
                         .requestMatchers("/admin/**").permitAll()
-
-
                         // 1-1. 실시간 인기 질문 키워드 (개발용 hit + 조회)
                         .requestMatchers("/api/popular/answer-keywords").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/popular/hit").permitAll()  // 🔹 개발용
-
-
+                        .requestMatchers("/api/popular/answer-keywords/*/latest-question").permitAll()
                         // 2. 채팅 (오타 수정됨: caht -> chat)
                         .requestMatchers("/chat/**").permitAll()
                         .requestMatchers("/api/crawler/**").permitAll()

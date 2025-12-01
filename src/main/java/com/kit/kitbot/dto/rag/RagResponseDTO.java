@@ -26,4 +26,11 @@ public class RagResponseDTO {
     // FastAPI: isDate (캘린더 UI 활성화 여부)
     @JsonProperty("isDate") // JSON의 "isDate"를 확실하게 매핑
     private boolean isDate;
+
+    private String startDate;
+
+    // 👇 추가: 일정 종료일 (예: "2025-09-05")
+    private String endDate;
+
+    private String scheduleTitle;
 }
