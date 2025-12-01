@@ -10,5 +10,6 @@ public class CommentRequest {
     private String postId;
     private String content;
     private String parentId;
+    private String authorId;  // 추가
 
 }

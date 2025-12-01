@@ -75,36 +75,38 @@ public class CommentService {
                 .build();
     }
 
-    public List<CommentResponseDTO> getCommentsByPost(String postId) {
+    public List<CommentResponseDTO> getCommentsByPost(String postId, String currentUserId) {
         List<Comment> allComments = commentRepository.findByPostIdAndStatus(postId, "active");
 
         return allComments.stream()
                 .filter(comment -> comment.getParentId() == null)
-                .map(this::convertToResponse)  // ← 이 메서드 필요!
+                .map(comment -> convertToResponse(comment, currentUserId))  // 파라미터 전달
                 .toList();
     }
 
-    public List<CommentResponseDTO> getReplies(String parentId) {
+    public List<CommentResponseDTO> getReplies(String parentId, String currentUserId) {
         List<Comment> replies = commentRepository.findByParentIdAndStatus(parentId, "active");
         return replies.stream()
-                .map(this::convertToResponse)
+                .map(comment -> convertToResponse(comment, currentUserId))  // 파라미터 전달
                 .toList();
     }
 
     // ← 이 메서드 추가!
     // CommentService.java
-    private CommentResponseDTO convertToResponse(Comment comment) {
+    private CommentResponseDTO convertToResponse(Comment comment, String currentUserId) {
         User user = userRepository.findById(comment.getAuthorId())
                 .orElseThrow(() -> new RuntimeException("사용자 없음"));
 
-        // 현재 사용자의 추천/신고 여부 확인
-        String currentUserId = "6908b0ea11c4a31b7f814a5a";  // 임시 사용자 ID
+        boolean isRecommended = false;
+        boolean isReported = false;
 
-        boolean isRecommended = commentRecommendRepository
-                .findByCommentIdAndUserId(comment.getId(), currentUserId) != null;
-
-        boolean isReported = commentReportRepository
-                .existsByCommentIdAndUserId(comment.getId(), currentUserId);
+        // currentUserId가 있을 때만 확인
+        if (currentUserId != null && !currentUserId.isEmpty()) {
+            isRecommended = commentRecommendRepository
+                    .findByCommentIdAndUserId(comment.getId(), currentUserId) != null;
+            isReported = commentReportRepository
+                    .existsByCommentIdAndUserId(comment.getId(), currentUserId);
+        }
 
         return CommentResponseDTO.builder()
                 .id(comment.getId())
@@ -117,11 +119,10 @@ public class CommentService {
                 .reportCount(comment.getReportCount())
                 .createdAt(comment.getCreatedAt())
                 .status(comment.getStatus())
-                .isRecommended(isRecommended)      // 추가
-                .isReported(isReported)            // 추가
+                .isRecommended(isRecommended)
+                .isReported(isReported)
                 .build();
     }
-
     // CommentService.java
 
     public void toggleRecommendComment(String commentId, String userId) {

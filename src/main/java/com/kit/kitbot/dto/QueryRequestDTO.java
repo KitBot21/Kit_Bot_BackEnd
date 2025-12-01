@@ -8,4 +8,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class QueryRequestDTO {
     private String question;
+    private String appLanguage;
 }
