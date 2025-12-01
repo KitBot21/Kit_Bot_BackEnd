@@ -2,27 +2,28 @@ package com.kit.kitbot.service;
 
 import com.kit.kitbot.document.Post;
 import com.kit.kitbot.document.Post.Status;
+import com.kit.kitbot.document.User;
 import com.kit.kitbot.dto.Post.PostRequestDTO;
 import com.kit.kitbot.dto.Post.PostResponseDTO;
 import com.kit.kitbot.dto.Post.CursorListResponseDTO;
-import com.kit.kitbot.repository.Post.PostRepository;
 import com.kit.kitbot.document.reaction.PostRecommend;
 import com.kit.kitbot.document.reaction.PostReport;
+import com.kit.kitbot.repository.Post.PostRepository;
 import com.kit.kitbot.repository.Reaction.PostRecommendRepository;
 import com.kit.kitbot.repository.Reaction.PostReportRepository;
+import com.kit.kitbot.repository.User.UserRepository;
 
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.dao.DuplicateKeyException;
 
 import java.time.Instant;
+import java.util.*;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,9 +34,13 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostRecommendRepository postRecommendRepository;
     private final PostReportRepository postReportRepository;
+    private final UserRepository userRepository;
+
     private static final int REPORTS_TO_BLIND = 10;
     private static final int DEFAULT_LIMIT = 10;
     private static final int MAX_LIMIT = 50;
+
+    // ---------------- 공통 유틸 ----------------
 
     private int normalizeLimit(Integer limit) {
         if (limit == null) return DEFAULT_LIMIT;
@@ -58,6 +63,29 @@ public class PostService {
         return last != null ? last.toString() : null;
     }
 
+    private String resolveAuthorNickname(String authorId) {
+        if (authorId == null || authorId.isBlank()) return null;
+
+        return userRepository.findById(authorId)
+                .map(user -> {
+                    // 닉네임으로 쓸 값 결정 로직
+                    if (user.hasUsername()) {
+                        return user.getUsername();          // ⭐ 사용자가 설정한 닉네임
+                    }
+                    // username 미설정이면 googleEmail 앞부분 같은 걸로 대체하거나,
+                    // 그냥 고정 문구를 써도 됨
+                    String email = user.getGoogleEmail();
+                    if (email != null && !email.isBlank()) {
+                        int at = email.indexOf('@');
+                        return at > 0 ? email.substring(0, at) : email;
+                    }
+                    return "알 수 없는 사용자";
+                })
+                .orElse("탈퇴한 사용자");
+    }
+
+    // ---------------- 조회 (커서) ----------------
+
     public CursorListResponseDTO<PostResponseDTO> getPostsCursor(String keyword, String after, Integer limit) {
         final int take = normalizeLimit(limit);
         final Instant afterTs = parseAfter(after);
@@ -75,11 +103,16 @@ public class PostService {
         String nextCursor = safeNextCursor(rows, hasNext);
 
         List<PostResponseDTO> items = rows.stream()
-                .map(PostResponseDTO::from)
+                .map(p -> {
+                    String nickname = resolveAuthorNickname(p.getAuthorId());
+                    return PostResponseDTO.from(p, nickname);
+                })
                 .collect(Collectors.toList());
 
         return new CursorListResponseDTO<>(items, nextCursor, hasNext);
     }
+
+    // ---------------- 단건 조회 ----------------
 
     @Transactional(readOnly = true)
     public Optional<PostResponseDTO> getPost(String id, Collection<Status> statuses, String currentUserId) {
@@ -87,24 +120,33 @@ public class PostService {
                 .map(post -> buildDtoWithUserData(post, currentUserId));
     }
 
+    // ---------------- 페이지네이션 조회 ----------------
+
     public Page<PostResponseDTO> getPostList(Collection<Status> statuses, Pageable pageable) {
-        return postRepository.findByStatusIn(statuses, pageable).map(PostResponseDTO::from);
+        return postRepository.findByStatusIn(statuses, pageable)
+                .map(post -> PostResponseDTO.from(post, resolveAuthorNickname(post.getAuthorId())));
     }
 
     public Page<PostResponseDTO> getPostsByAuthor(String authorId, Collection<Status> statuses, Pageable pageable) {
-        return postRepository.findByAuthorIdAndStatusIn(authorId, statuses, pageable).map(PostResponseDTO::from);
+        return postRepository.findByAuthorIdAndStatusIn(authorId, statuses, pageable)
+                .map(post -> PostResponseDTO.from(post, resolveAuthorNickname(post.getAuthorId())));
     }
 
     public Page<PostResponseDTO> searchPostsByTitle(String keyword, Collection<Status> statuses, Pageable pageable) {
         String regex = ".*" + keyword + ".*";
-        return postRepository.findByTitleRegexAndStatusIn(regex, statuses, pageable).map(PostResponseDTO::from);
+        return postRepository.findByTitleRegexAndStatusIn(regex, statuses, pageable)
+                .map(post -> PostResponseDTO.from(post, resolveAuthorNickname(post.getAuthorId())));
     }
+
+    // ---------------- 생성/수정/삭제 ----------------
 
     @Transactional
     public PostResponseDTO createPost(PostRequestDTO req) {
         if (req.getAuthorId() == null) throw new IllegalArgumentException("authorId는 필수입니다.");
-        if (req.getTitle() == null || req.getTitle().isBlank()) throw new IllegalArgumentException("title은 필수입니다.");
-        if (req.getContent() == null || req.getContent().isBlank()) throw new IllegalArgumentException("content는 필수입니다.");
+        if (req.getTitle() == null || req.getTitle().isBlank())
+            throw new IllegalArgumentException("title은 필수입니다.");
+        if (req.getContent() == null || req.getContent().isBlank())
+            throw new IllegalArgumentException("content는 필수입니다.");
 
         Instant now = Instant.now();
         Post post = new Post();
@@ -160,7 +202,7 @@ public class PostService {
     public PostResponseDTO softDelete(String postId, String requesterId) {
         Post post = mustFind(postId);
 
-        if (!java.util.Objects.equals(post.getAuthorId(), requesterId)) {
+        if (!Objects.equals(post.getAuthorId(), requesterId)) {
             throw new IllegalArgumentException("작성자만 삭제할 수 있습니다.");
         }
         if (post.getStatus() == Status.DELETED) {
@@ -174,6 +216,8 @@ public class PostService {
         Post updated = mustFind(postId);
         return buildDtoWithUserData(updated, requesterId);
     }
+
+    // ---------------- 추천/신고 ----------------
 
     private void ensureUpdatable(Post post) {
         if (post.getStatus() == Status.DELETED) {
@@ -207,6 +251,7 @@ public class PostService {
                 postRecommendRepository.save(rec);
                 postRepository.incRecommendCount(postId, +1);
             } catch (DuplicateKeyException e) {
+                // 중복 추천은 무시
             }
         }
         return buildDtoWithUserData(mustFind(postId), userId);
@@ -232,6 +277,7 @@ public class PostService {
                 postRepository.incReportCount(postId, +1);
                 autoBlindIfNeeded(postId);
             } catch (DuplicateKeyException e) {
+                // 중복 신고는 무시
             }
         }
         return buildDtoWithUserData(mustFind(postId), userId);
@@ -243,6 +289,8 @@ public class PostService {
             postRepository.blind(postId, "자동 블라인드: 신고가 10회 이상 누적됨", Instant.now());
         }
     }
+
+    // ---------------- 관리자 블라인드 ----------------
 
     @Transactional
     public PostResponseDTO adminBlind(String postId, String reason) {
@@ -267,17 +315,21 @@ public class PostService {
         return buildDtoWithUserData(mustFind(postId), null);
     }
 
+    // ---------------- DTO 빌드 ----------------
+
     private PostResponseDTO buildDtoWithUserData(Post post, String currentUserId) {
         if (post == null) return null;
+
+        String authorNickname = resolveAuthorNickname(post.getAuthorId());
+
+        // 로그인 정보가 없으면 추천/신고 여부 계산 안 함
         if (currentUserId == null || currentUserId.isBlank()) {
-            return PostResponseDTO.from(post);
+            return PostResponseDTO.from(post, authorNickname);
         }
-        System.out.println("currentUserId: " + currentUserId);
 
         boolean isRec = postRecommendRepository.existsByPostIdAndUserId(post.getId(), currentUserId);
         boolean isRep = postReportRepository.existsByPostIdAndUserId(post.getId(), currentUserId);
-        System.out.println("isRec: " + isRec + ", isRep: " + isRep);
 
-        return PostResponseDTO.from(post, isRec, isRep);
+        return PostResponseDTO.from(post, authorNickname, isRec, isRep);
     }
 }
