@@ -80,7 +80,7 @@ public class SecurityConfig {
         // 프론트엔드 개발 시에는 보통 특정 도메인이나 localhost만 허용하는 게 정석이지만
         // 지금은 개발 단계니 "*"도 괜찮습니다. 나중에 배포할 때 수정하세요.
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 
