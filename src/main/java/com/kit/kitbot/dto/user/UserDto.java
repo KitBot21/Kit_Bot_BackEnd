@@ -19,6 +19,7 @@ public class UserDto {
     private String username;
     private String role;
     private boolean usernameSet;
+    private boolean notificationEnabled;
 
     // 👇 [추가] 앱 설정 상태 확인용
     private String pushToken;       // 푸시 토큰 (등록 여부 확인용)
@@ -35,6 +36,7 @@ public class UserDto {
                 // 👇 [추가] 엔티티에서 값 가져오기
                 .pushToken(user.getPushToken())
                 // 키워드 리스트가 null이면 빈 배열 []로 보내기 (프론트 에러 방지)
+                .notificationEnabled(user.getNotificationEnabled() != null ? user.getNotificationEnabled() : true)
                 .keywords(user.getKeywords() != null ? user.getKeywords() : new ArrayList<>())
                 .build();
     }

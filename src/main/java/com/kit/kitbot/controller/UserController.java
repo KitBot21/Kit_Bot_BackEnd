@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -82,6 +84,30 @@ public class UserController {
         String userId = getUserIdFromToken(token);
         userService.withdraw(userId);
         return ResponseEntity.ok(Map.of("message", "회원 탈퇴가 완료되었습니다."));
+    }
+
+    @PatchMapping("/notification")
+    public ResponseEntity<Map<String, Object>> updateNotificationSetting(
+            @RequestHeader("Authorization") String token,
+            @RequestBody Map<String, Boolean> requestBody
+    ) {
+        String userId = getUserIdFromToken(token);
+        Boolean enabled = requestBody.get("enabled");
+
+        if (enabled == null) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "enabled 값이 필요합니다."));
+        }
+
+        userService.updateNotificationEnabled(userId, enabled);
+
+        return ResponseEntity.ok(Map.of("success", true, "notificationEnabled", enabled));
+    }
+
+    // DELETE /api/user/push-token 추가
+    @DeleteMapping("/api/user/push-token")
+    public ResponseEntity<?> deletePushToken(@AuthenticationPrincipal UserDetails userDetails) {
+        userService.deletePushToken(userDetails.getUsername());
+        return ResponseEntity.ok().build();
     }
 
 }

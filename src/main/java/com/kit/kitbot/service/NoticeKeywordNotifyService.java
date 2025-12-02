@@ -46,7 +46,11 @@ public class NoticeKeywordNotifyService {
                             String pushToken = user.getPushToken();
                             log.info("유저 찾음! email: {}, pushToken: {}", userId, pushToken);
 
-                            if (pushToken != null && !pushToken.isEmpty()) {
+                            // 👇 여기 조건 수정
+                            Boolean notificationEnabled = user.getNotificationEnabled();
+                            if (pushToken != null && !pushToken.isEmpty()
+                                    && (notificationEnabled == null || notificationEnabled)) {
+
                                 boolean sent = notificationService.sendPush(
                                         pushToken,
                                         "🔔 새 공지 알림",
@@ -65,7 +69,8 @@ public class NoticeKeywordNotifyService {
                                             .build());
                                 }
                             } else {
-                                log.warn("유저 pushToken이 없음: {}", userId);
+                                log.warn("알림 발송 스킵 - 유저: {}, pushToken: {}, notificationEnabled: {}",
+                                        userId, pushToken, notificationEnabled);
                             }
                         },
                         () -> {

@@ -57,16 +57,8 @@ public class AnswerKeywordStatService {
             return List.of();
         }
 
-        // 오늘부터 최근 7일까지 확인
-        for (int i = 0; i < 7; i++) {
-            String key = buildKey(LocalDate.now().minusDays(i));
-            List<PopularKeywordDto> result = getTopFromKey(key, limit);
-            if (!result.isEmpty()) {
-                return result;
-            }
-        }
-
-        return List.of();
+        String key = buildKey(LocalDate.now());
+        return getTopFromKey(key, limit);
     }
 
     private List<PopularKeywordDto> getTopFromKey(String key, int limit) {

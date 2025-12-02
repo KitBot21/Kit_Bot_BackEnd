@@ -31,6 +31,7 @@ public class User {
     private String pushToken;
     private List<String> keywords;
     private Instant deletedAt;
+    private Boolean notificationEnabled;  // 👈 추가
 
     public enum Role { guest, kumoh, admin }
     public enum Status { active, blocked, deleted }
@@ -42,6 +43,7 @@ public class User {
                 .createdAt(Instant.now())
                 .locale("ko_KR")
                 .profileImg("/static/images/default_profile.png")
+                .notificationEnabled(true)
                 .build();
     }
 
@@ -56,6 +58,7 @@ public class User {
                 .status(Status.active)
                 .createdAt(Instant.now())
                 .locale("ko_KR")
+                .notificationEnabled(true)
                 .build();
     }
 

@@ -11,5 +11,7 @@ public interface UserRepository extends MongoRepository<User, String> {
     Optional<User> findByGoogleEmail(String googleEmail);
     boolean existsByUsername(String username);
     List<User> findByStatusAndDeletedAtBefore(User.Status status, Instant date);
+    boolean existsBySchoolEmail(String schoolEmail);
+    List<User> findAllByPushToken(String pushToken);
 
 }
