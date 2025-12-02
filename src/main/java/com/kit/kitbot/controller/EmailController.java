@@ -27,8 +27,15 @@ public class EmailController {
             return ResponseEntity.badRequest().body("학번과 구글 이메일이 필요합니다.");
         }
 
-        emailService.sendVerificationEmail(studentId, googleEmail);
-        return ResponseEntity.ok("인증번호가 발송되었습니다.");
+        try {
+            emailService.sendVerificationEmail(studentId, googleEmail);
+            return ResponseEntity.ok("인증번호가 발송되었습니다.");
+        } catch (IllegalStateException e) {
+            // 이미 인증된 학교 메일인 경우
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(error);
+        }
     }
 
     @PostMapping("/verify")

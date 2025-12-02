@@ -50,8 +50,7 @@ public class CommentService {
         post.setCommentCount(post.getCommentCount() + 1);
         postRepository.save(post);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다"));
+
 
         boolean isRecommended = commentRecommendRepository
                 .findByCommentIdAndUserId(saved.getId(), userId) != null;
@@ -63,7 +62,7 @@ public class CommentService {
                 .id(saved.getId())
                 .postId(saved.getPostId())
                 .authorId(saved.getAuthorId())
-                .authorName(user.getUsername())
+                .authorName(resolveAuthorName(saved.getAuthorId()))  // 이렇게 변경
                 .content(saved.getContent())
                 .parentId(saved.getParentId())
                 .recommendCount(saved.getRecommendCount())
@@ -94,8 +93,7 @@ public class CommentService {
     // ← 이 메서드 추가!
     // CommentService.java
     private CommentResponseDTO convertToResponse(Comment comment, String currentUserId) {
-        User user = userRepository.findById(comment.getAuthorId())
-                .orElseThrow(() -> new RuntimeException("사용자 없음"));
+
 
         boolean isRecommended = false;
         boolean isReported = false;
@@ -112,7 +110,7 @@ public class CommentService {
                 .id(comment.getId())
                 .postId(comment.getPostId())
                 .authorId(comment.getAuthorId())
-                .authorName(user.getUsername())
+                .authorName(resolveAuthorName(comment.getAuthorId()))  // 이렇게 변경
                 .content(comment.getContent())
                 .parentId(comment.getParentId())
                 .recommendCount(comment.getRecommendCount())
@@ -165,7 +163,6 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("댓글을 찾을 수 없습니다"));
 
-        // TODO: 로그인 구현 후 권한 확인 활성화
         // 권한 확인 (본인의 댓글만 삭제 가능)
         // if (!comment.getAuthorId().equals(userId)) {
         //     throw new RuntimeException("댓글 삭제 권한이 없습니다");
@@ -211,6 +208,19 @@ public class CommentService {
                 .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
         post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
         postRepository.save(post);
+    }
+
+    private String resolveAuthorName(String authorId) {
+        if (authorId == null || authorId.isBlank()) return "알 수 없는 사용자";
+
+        return userRepository.findById(authorId)
+                .map(user -> {
+                    if (user.getStatus() == User.Status.deleted) {
+                        return "탈퇴한 사용자";
+                    }
+                    return user.getUsername() != null ? user.getUsername() : "알 수 없는 사용자";
+                })
+                .orElse("탈퇴한 사용자");
     }
 
 }

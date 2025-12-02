@@ -19,37 +19,40 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final UserRepository userRepository;
 
-    // 인증번호를 잠시 저장해두는 곳 (Key: 학교이메일, Value: 인증번호)
-    // 서버 껐다 켜면 날아가지만, 지금 단계에선 충분합니다. (나중엔 Redis 사용 권장)
-    private final Map<String, String> verificationCodes = new ConcurrentHashMap<>();
+    // Key: schoolEmail, Value: {code, googleEmail}
+    private final Map<String, VerificationData> verificationCodes = new ConcurrentHashMap<>();
+
+    private record VerificationData(String code, String googleEmail) {}
 
     // 1. 인증 메일 발송
     public void sendVerificationEmail(String studentId, String googleEmail) {
         String schoolEmail = studentId + "@kumoh.ac.kr";
 
-        // 6자리 랜덤 숫자 생성
+        // 이미 다른 계정에서 인증된 학교 메일인지 체크
+        if (userRepository.existsBySchoolEmail(schoolEmail)) {
+            throw new IllegalStateException("이미 다른 계정에서 인증된 학교 메일입니다.");
+        }
+
         String code = String.format("%06d", new Random().nextInt(1000000));
 
-        // 저장소에 저장 (나중에 검사를 위해)
-        verificationCodes.put(schoolEmail, code);
+        verificationCodes.put(schoolEmail, new VerificationData(code, googleEmail));
 
-        // 메일 전송 객체 생성
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(schoolEmail);
         message.setSubject("[KIT-Bot] 금오공대 학생 인증 번호입니다.");
         message.setText("인증 번호: " + code + "\n\n앱으로 돌아가서 인증번호를 입력해주세요.");
 
         mailSender.send(message);
-        System.out.println("✅ 메일 발송 성공: " + schoolEmail + " -> " + code);
+        System.out.println("✅ 메일 발송 성성공: " + schoolEmail + " -> " + code);
     }
 
     // 2. 인증 번호 검증 & 등급업(kumoh)
     @Transactional
     public User verifyCode(String studentId, String code, String googleEmail) {
         String schoolEmail = studentId + "@kumoh.ac.kr";
-        String savedCode = verificationCodes.get(schoolEmail);
+        VerificationData data = verificationCodes.get(schoolEmail);
 
-        if (savedCode != null && savedCode.equals(code)) {
+        if (data != null && data.code().equals(code) && data.googleEmail().equals(googleEmail)) {
             verificationCodes.remove(schoolEmail);
 
             User user = userRepository.findByGoogleEmail(googleEmail)
@@ -61,8 +64,8 @@ public class EmailService {
 
             System.out.println("🎉 인증 성공! 등급 변경 완료: " + user.getUsername());
 
-            return user;  // User 반환
+            return user;
         }
-        return null;  // 실패 시 null
+        return null;
     }
 }

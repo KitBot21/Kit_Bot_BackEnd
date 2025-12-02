@@ -9,8 +9,10 @@ import com.kit.kitbot.repository.User.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -52,7 +54,20 @@ public class UserService {
         return !userRepository.existsByUsername(username);
     }
 
-    public void updatePushToken(String userId, String pushToken){
+    public void updatePushToken(String userId, String pushToken) {
+        // 1. 같은 pushToken 가진 다른 유저들 토큰 제거
+        if (pushToken != null) {
+            List<User> usersWithSameToken = userRepository.findAllByPushToken(pushToken);
+            for (User u : usersWithSameToken) {
+                if (!u.getId().equals(userId)) {
+                    u.setPushToken(null);
+                    userRepository.save(u);
+                    log.info("중복 푸시 토큰 제거: userId={}", u.getId());
+                }
+            }
+        }
+
+        // 2. 현재 유저에게 저장
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
@@ -60,7 +75,7 @@ public class UserService {
         userRepository.save(user);
         log.info("푸시 토큰 업데이트 완료: userId={}", userId);
     }
-
+    @Transactional
     public void withdraw(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -77,6 +92,22 @@ public class UserService {
 
         userRepository.save(user);
         log.info("회원 탈퇴 처리 완료: userId={}", userId);
+    }
+
+    public void updateNotificationEnabled(String userId, Boolean enabled) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        user.setNotificationEnabled(enabled);
+        userRepository.save(user);
+        log.info("알림 설정 변경: userId={}, enabled={}", userId, enabled);
+    }
+
+    public void deletePushToken(String email) {
+        User user = userRepository.findByGoogleEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setPushToken(null);
+        userRepository.save(user);
     }
 
 }
