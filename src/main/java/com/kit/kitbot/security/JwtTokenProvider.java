@@ -1,9 +1,11 @@
 package com.kit.kitbot.security;
 
+import com.kit.kitbot.document.User;
+import com.kit.kitbot.repository.User.UserRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collections;
 import java.util.List;
@@ -21,13 +23,16 @@ public class JwtTokenProvider {
 
     private final SecretKey secretKey;
     private final long validityInMilliseconds;
+    private final UserRepository userRepository;
 
     public JwtTokenProvider(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") long validityInMilliseconds
+            @Value("${jwt.expiration}") long validityInMilliseconds,
+            UserRepository userRepository
     ) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.validityInMilliseconds = validityInMilliseconds;
+        this.userRepository = userRepository;
     }
 
     // JWT 토큰 생성 (role 포함)
@@ -86,18 +91,30 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
 
-        // 토큰에서 role 꺼내기
-        String role = claims.get("role", String.class);
-        if (role == null) role = "guest";
-
-        // 토큰에서 userId 꺼내기
         String userId = claims.get("userId", String.class);
+        if (userId == null) {
+            throw new UsernameNotFoundException("토큰에 userId 정보가 없습니다.");
+        }
 
-        // role을 authority로 설정
-        List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(role));
+        // DB에서 유저 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
 
-        // 👇 변경: User → CustomUserDetails
-        CustomUserDetails principal = new CustomUserDetails(claims.getSubject(), userId, authorities);
+        // 정지/탈퇴 상태 체크
+        if (user.getStatus() == User.Status.blocked) {
+            throw new DisabledException("정지된 계정입니다.");
+        }
+        if (user.getStatus() == User.Status.deleted) {
+            throw new DisabledException("탈퇴된 계정입니다.");
+        }
+
+        // DB 기준 role 사용
+        String role = user.getRole().name();
+        List<SimpleGrantedAuthority> authorities =
+                Collections.singletonList(new SimpleGrantedAuthority(role));
+
+        CustomUserDetails principal =
+                new CustomUserDetails(user.getGoogleEmail(), user.getId(), authorities);
 
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }

@@ -49,7 +49,7 @@ public class NoticeKeywordNotifyService {
                             if (pushToken != null && !pushToken.isEmpty()) {
                                 boolean sent = notificationService.sendPush(
                                         pushToken,
-                                        "🔔 [" + keywordEnum.name() + "] 새 공지 알림",
+                                        "🔔 새 공지 알림",
                                         request.getTitle(),
                                         request.getUrl()
                                 );

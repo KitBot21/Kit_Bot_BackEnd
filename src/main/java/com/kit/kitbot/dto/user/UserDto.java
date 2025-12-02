@@ -18,7 +18,7 @@ public class UserDto {
     private String email;
     private String username;
     private String role;
-    private boolean isUsernameSet;
+    private boolean usernameSet;
 
     // 👇 [추가] 앱 설정 상태 확인용
     private String pushToken;       // 푸시 토큰 (등록 여부 확인용)
@@ -30,7 +30,7 @@ public class UserDto {
                 .email(user.getGoogleEmail())
                 .username(user.getUsername())
                 .role(user.getRole().toString())
-                .isUsernameSet(user.hasUsername())
+                .usernameSet(user.hasUsername())
 
                 // 👇 [추가] 엔티티에서 값 가져오기
                 .pushToken(user.getPushToken())
