@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -56,5 +58,25 @@ public class UserService {
 
         user.setPushToken(pushToken);
         userRepository.save(user);
-        log.info("푸시 토큰 업데이트 완료: userId={}", userId);    }
+        log.info("푸시 토큰 업데이트 완료: userId={}", userId);
+    }
+
+    public void withdraw(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        // 이미 탈퇴한 사용자인지 확인
+        if (user.getStatus() == User.Status.deleted) {
+            throw new RuntimeException("이미 탈퇴한 사용자입니다.");
+        }
+
+        // Soft Delete 처리
+        user.setStatus(User.Status.deleted);
+        user.setDeletedAt(Instant.now());
+        user.setPushToken(null);  // 푸시 토큰 삭제
+
+        userRepository.save(user);
+        log.info("회원 탈퇴 처리 완료: userId={}", userId);
+    }
+
 }

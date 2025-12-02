@@ -43,4 +43,22 @@ public class NotificationController {
         long count = notificationQueryService.getUnreadCount(userEmail);
         return ResponseEntity.ok(count);
     }
+
+    @DeleteMapping("/{notificationId}")
+    public ResponseEntity<Void> deleteNotification(
+            @PathVariable String notificationId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail = userDetails.getUsername();
+        notificationQueryService.deleteNotification(notificationId, userEmail);
+        return ResponseEntity.ok().build();
+    }
+
+    // 5. 알림 전체 삭제
+    @DeleteMapping("/all")
+    public ResponseEntity<Void> deleteAllNotifications(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail = userDetails.getUsername();
+        notificationQueryService.deleteAllMyNotifications(userEmail);
+        return ResponseEntity.ok().build();
+    }
 }

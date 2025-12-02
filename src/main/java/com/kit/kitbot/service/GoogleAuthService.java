@@ -48,11 +48,20 @@ public class GoogleAuthService {
 
             // 3단계: DB에서 사용자 찾기 or 생성
             User user = userRepository.findByGoogleEmail(email)
+                    .map(existingUser -> {
+                        // 탈퇴한 사용자가 다시 로그인하면 복구
+                        if (existingUser.getStatus() == User.Status.deleted) {
+                            log.info("탈퇴 사용자 복구: {}", email);
+                            existingUser.setStatus(User.Status.active);
+                            existingUser.setDeletedAt(null);
+                            return userRepository.save(existingUser);
+                        }
+                        return existingUser;
+                    })
                     .orElseGet(() -> {
                         log.info("신규 사용자 생성: {}", email);
                         return createNewUser(googleId, email, name, picture);
                     });
-
             // 4단계: 우리 서비스의 JWT 토큰 생성
             String accessToken = jwtTokenProvider.createToken(user.getId(), user.getGoogleEmail(), user.getRole().name());
 

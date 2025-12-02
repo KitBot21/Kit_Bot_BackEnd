@@ -90,10 +90,14 @@ public class JwtTokenProvider {
         String role = claims.get("role", String.class);
         if (role == null) role = "guest";
 
+        // 토큰에서 userId 꺼내기
+        String userId = claims.get("userId", String.class);
+
         // role을 authority로 설정
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(role));
 
-        UserDetails principal = new User(claims.getSubject(), "", authorities);
+        // 👇 변경: User → CustomUserDetails
+        CustomUserDetails principal = new CustomUserDetails(claims.getSubject(), userId, authorities);
 
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
