@@ -188,4 +188,29 @@ public class CommentService {
         postRepository.save(post);
     }
 
+    /** 관리자용 강제 soft delete (작성자와 무관) */
+    public void softDeleteByAdmin(String commentId, String adminId, String reason) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("댓글을 찾을 수 없습니다"));
+
+        // 이미 deleted면 그냥 리턴해도 되고, 아니면 예외 던져도 됨
+        if ("deleted".equalsIgnoreCase(comment.getStatus())) {
+            return;
+        }
+
+        // 삭제 처리
+        comment.setStatus("deleted");
+        comment.setUpdatedAt(LocalDateTime.now());
+        // 필요하면 관리자가 남긴 이유를 blindedReason에 같이 넣어도 됨
+        comment.setBlindedReason(reason);  // 필드 이용 재활용
+
+        commentRepository.save(comment);
+
+        // 댓글 수 감소
+        Post post = postRepository.findById(comment.getPostId())
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
+        post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
+        postRepository.save(post);
+    }
+
 }

@@ -1,23 +1,32 @@
 package com.kit.kitbot.service;
 
 import com.kit.kitbot.document.Post;
+import com.kit.kitbot.document.Comment;
 import com.kit.kitbot.document.Post.Status;
+import com.kit.kitbot.document.User;
+import com.kit.kitbot.dto.Post.PostAdminDetailDTO;
 import com.kit.kitbot.repository.Post.PostRepository;
+import com.kit.kitbot.repository.Post.CommentRepository;
+import com.kit.kitbot.repository.User.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Locale;
+
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
 public class AdminPostService {
 
     private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
 
     /**
      * 관리자용 게시글 목록 조회
@@ -66,5 +75,35 @@ public class AdminPostService {
 
         post.unblind();
         postRepository.save(post);
+    }
+
+    /** 게시글 + 댓글/대댓글 전체 조회 (관리자용) */
+    public PostAdminDetailDTO getPostDetail(String postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+
+        List<Comment> comments = commentRepository.findByPostId(postId);
+
+        // authorId 모으기 (게시글 + 댓글/대댓글 전부)
+        Set<String> authorIds = new HashSet<>();
+        authorIds.add(post.getAuthorId());
+        comments.forEach(c -> authorIds.add(c.getAuthorId()));
+
+        // ✅ 기본 제공되는 findAllById 사용
+        List<User> users = userRepository.findAllById(authorIds);
+
+        // ✅ username이 닉네임 역할이므로 getUsername 사용
+        Map<String, String> userIdToNickname = users.stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        u -> {
+                            String username = u.getUsername();
+                            return (username != null && !username.isBlank())
+                                    ? username
+                                    : u.getGoogleEmail(); // 닉네임 없으면 이메일이나 id 등 fallback
+                        }
+                ));
+
+        return PostAdminDetailDTO.of(post, comments, userIdToNickname);
     }
 }
