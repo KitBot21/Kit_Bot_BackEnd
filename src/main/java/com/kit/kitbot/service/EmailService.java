@@ -45,28 +45,24 @@ public class EmailService {
 
     // 2. 인증 번호 검증 & 등급업(kumoh)
     @Transactional
-    public boolean verifyCode(String studentId, String code, String googleEmail) {
+    public User verifyCode(String studentId, String code, String googleEmail) {
         String schoolEmail = studentId + "@kumoh.ac.kr";
         String savedCode = verificationCodes.get(schoolEmail);
 
-        // 저장된 코드와 입력한 코드가 같은지 확인
         if (savedCode != null && savedCode.equals(code)) {
-            // 인증 성공! -> 메모리에서 삭제 (재사용 방지)
             verificationCodes.remove(schoolEmail);
 
-            // DB에서 유저를 찾아서 Role을 'kumoh'로 변경
             User user = userRepository.findByGoogleEmail(googleEmail)
                     .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
-            // 동료분 코드(User.java)의 setRole 사용
             user.setRole(User.Role.kumoh);
-            user.setSchoolEmail(schoolEmail); // 학교 이메일 정보도 저장해주면 좋음
+            user.setSchoolEmail(schoolEmail);
+            userRepository.save(user);
 
-            userRepository.save(user); // 변경사항 저장
             System.out.println("🎉 인증 성공! 등급 변경 완료: " + user.getUsername());
 
-            return true;
+            return user;  // User 반환
         }
-        return false;
+        return null;  // 실패 시 null
     }
 }
