@@ -30,4 +30,18 @@ public class NotificationQueryService {
     public long getUnreadCount(String userEmail) {
         return notificationRepository.countByUserIdAndReadFalse(userEmail);
     }
+
+    public void deleteNotification(String notificationId, String userEmail) {
+        notificationRepository.findById(notificationId).ifPresent(notification -> {
+            // 본인 알림인지 확인
+            if (notification.getUserId().equals(userEmail)) {
+                notificationRepository.delete(notification);
+            }
+        });
+    }
+
+    // 전체 삭제
+    public void deleteAllMyNotifications(String userEmail) {
+        notificationRepository.deleteByUserId(userEmail);
+    }
 }

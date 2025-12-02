@@ -4,6 +4,7 @@ import com.kit.kitbot.document.Post.Status;
 import com.kit.kitbot.dto.Post.CursorListResponseDTO;
 import com.kit.kitbot.dto.Post.PostRequestDTO;
 import com.kit.kitbot.dto.Post.PostResponseDTO;
+import com.kit.kitbot.security.CustomUserDetails;  // 👈 추가
 import com.kit.kitbot.service.PostService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,8 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;  // 👈 추가
 import org.springframework.web.bind.annotation.*;
 
 import java.util.EnumSet;
@@ -42,72 +42,66 @@ public class PostController {
 
     @Operation(summary = "게시글 작성")
     @PostMapping
-    public ResponseEntity<PostResponseDTO> create(@RequestBody PostRequestDTO req) {
-        String currentUserId = getCurrentUserId();
-        req.setAuthorId(currentUserId);
+    public ResponseEntity<PostResponseDTO> create(
+            @RequestBody PostRequestDTO req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        req.setAuthorId(userDetails.getUserId());
         return ResponseEntity.ok(postService.createPost(req));
     }
 
     @Operation(summary = "게시글 상세 조회")
     @GetMapping("/{postId}")
-    public ResponseEntity<PostResponseDTO> getOne(@PathVariable String postId) {
+    public ResponseEntity<PostResponseDTO> getOne(
+            @PathVariable String postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         Set<Status> statuses = EnumSet.of(Status.ACTIVE);
-        String currentUserId = getCurrentUserId();
-
-        System.out.println("=== GET ONE POST ===");
-        System.out.println("postId: " + postId);
-        System.out.println("currentUserId: " + currentUserId);
+        String currentUserId = userDetails != null ? userDetails.getUserId() : null;
 
         Optional<PostResponseDTO> res = postService.getPost(postId, statuses, currentUserId);
-
-        res.ifPresent(dto -> {
-            System.out.println("Response isRecommended: " + dto.isRecommended());
-            System.out.println("Response isReported: " + dto.isReported());
-        });
-
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "내 글 목록 (마이페이지)")
     @GetMapping("/me")
-    public ResponseEntity<Page<PostResponseDTO>> myPosts(Pageable pageable) {
-        String userId = getCurrentUserId();
+    public ResponseEntity<Page<PostResponseDTO>> myPosts(
+            Pageable pageable,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         Set<Status> statuses = EnumSet.of(Status.ACTIVE);
-        return ResponseEntity.ok(postService.getPostsByAuthor(userId, statuses, pageable));
+        return ResponseEntity.ok(postService.getPostsByAuthor(userDetails.getUserId(), statuses, pageable));
     }
 
     @Operation(summary = "게시글 수정")
     @PatchMapping("/{postId}")
     public ResponseEntity<PostResponseDTO> update(
             @PathVariable String postId,
-            @RequestBody PostRequestDTO req
-    ) {
-        String editorId = getCurrentUserId();
-        return ResponseEntity.ok(postService.updatePost(postId, editorId, req));
+            @RequestBody PostRequestDTO req,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(postService.updatePost(postId, userDetails.getUserId(), req));
     }
 
     @Operation(summary = "게시글 삭제")
     @DeleteMapping("/{postId}")
-    public ResponseEntity<PostResponseDTO> softDelete(@PathVariable String postId) {
-        String userId = getCurrentUserId();
-        return ResponseEntity.ok(postService.softDelete(postId, userId));
+    public ResponseEntity<PostResponseDTO> softDelete(
+            @PathVariable String postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(postService.softDelete(postId, userDetails.getUserId()));
     }
 
     @Operation(summary = "게시글 추천 토글")
     @PostMapping("/{postId}/recommend/toggle")
-    public ResponseEntity<PostResponseDTO> toggleRecommend(@PathVariable String postId) {
-        String userId = getCurrentUserId();
-        return ResponseEntity.ok(postService.toggleRecommend(postId, userId));
+    public ResponseEntity<PostResponseDTO> toggleRecommend(
+            @PathVariable String postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(postService.toggleRecommend(postId, userDetails.getUserId()));
     }
 
     @Operation(summary = "게시글 신고 토글")
     @PostMapping("/{postId}/report/toggle")
     public ResponseEntity<PostResponseDTO> toggleReport(
             @PathVariable String postId,
-            @RequestParam(required = false) String reason
-    ) {
-        String userId = getCurrentUserId();
-        return ResponseEntity.ok(postService.toggleReport(postId, userId, reason));
+            @RequestParam(required = false) String reason,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(postService.toggleReport(postId, userDetails.getUserId(), reason));
     }
 
     @Operation(summary = "관리자: 게시글 블라인드 처리")
@@ -124,41 +118,4 @@ public class PostController {
     public ResponseEntity<PostResponseDTO> adminUnblind(@PathVariable String postId) {
         return ResponseEntity.ok(postService.adminUnblind(postId));
     }
-
-    private String getCurrentUserId() {
-        final String TEMP_TEST_USER_ID = "6908b0ea11c4a31b7f814a5a";
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() != null) {
-            Object principal = auth.getPrincipal();
-            if (principal instanceof String && "anonymousUser".equals(principal)) {
-                return TEMP_TEST_USER_ID;
-            }
-            return auth.getName();
-        }
-        return TEMP_TEST_USER_ID;
-    }
 }
-
-//    private String getCurrentUserId() {
-//        // 실제 로그인 구현 후 Principal에서 userId 추출하도록 교체 필요
-//        var auth = SecurityContextHolder.getContext().getAuthentication();
-//        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() != null) {
-//            return auth.getName();
-//        }
-//        throw new IllegalStateException("로그인이 필요합니다. (보안 컨텍스트 비어있음)");
-//    }
-
-/** 전체 목록 조회 + 간단 키워드 검색 (일반 사용자: ACTIVE만) */
-//    @Operation(summary = "[Deprecated] 페이지네이션 목록 조회", description = "앱에서는 /api/posts/cursor (커서 기반) API 사용 권장")
-//    @GetMapping
-//    public ResponseEntity<Page<PostResponseDTO>> list(
-//            @RequestParam(required = false) String keyword,
-//            Pageable pageable
-//    ) {
-//        Set<Status> statuses = EnumSet.of(Status.ACTIVE);
-//        Page<PostResponseDTO> page = (keyword == null || keyword.isBlank())
-//                ? postService.getPostList(statuses, pageable)
-//                : postService.searchPostsByTitle(keyword.trim(), statuses, pageable);
-//        return ResponseEntity.ok(page);
-//    }

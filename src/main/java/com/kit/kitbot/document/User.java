@@ -30,6 +30,7 @@ public class User {
     private String profileImg;
     private String pushToken;
     private List<String> keywords;
+    private Instant deletedAt;
 
     public enum Role { guest, kumoh, admin }
     public enum Status { active, blocked, deleted }

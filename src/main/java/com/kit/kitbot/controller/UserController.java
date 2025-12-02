@@ -74,4 +74,14 @@ public class UserController {
 
         return ResponseEntity.ok("푸시 토큰이 저장되었습니다.");
     }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Map<String, String>> withdraw(
+            @RequestHeader("Authorization") String token
+    ) {
+        String userId = getUserIdFromToken(token);
+        userService.withdraw(userId);
+        return ResponseEntity.ok(Map.of("message", "회원 탈퇴가 완료되었습니다."));
+    }
+
 }
