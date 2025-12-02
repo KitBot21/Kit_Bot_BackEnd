@@ -58,7 +58,6 @@ public class NoticeKeywordNotifyService {
                                     notificationRepo.save(Notification.builder()
                                             .userId(userId)
                                             .type("NOTICE_KEYWORD")
-                                            .keyword(keywordEnum.name())
                                             .noticeId(request.getUrl())
                                             .title(request.getTitle())
                                             .pushed(true)

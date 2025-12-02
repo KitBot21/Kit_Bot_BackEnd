@@ -131,13 +131,9 @@ public class PopularKeywordController {
                     content = @Content(schema = @Schema(hidden = true))
             )
     })
-    @GetMapping("/answer-keywords/{keyword}/latest-question")
+    @GetMapping("/answer-keywords/latest-question")
     public ResponseEntity<LatestKeywordQuestionDTO> latestQuestion(
-            @Parameter(
-                    description = "조회할 답변 키워드 (예: '장학금', '수강신청')",
-                    example = "장학금"
-            )
-            @PathVariable String keyword
+            @RequestParam String keyword
     ) {
         LatestKeywordQuestionDTO dto = popularQuestionService.getLatestQuestionByKeyword(keyword);
         if (dto == null) {
