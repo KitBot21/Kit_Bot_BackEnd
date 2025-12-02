@@ -2,6 +2,8 @@ package com.kit.kitbot.controller;
 
 import com.kit.kitbot.document.Post;
 import com.kit.kitbot.service.AdminPostService;
+import com.kit.kitbot.dto.Post.PostAdminDetailDTO;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -78,5 +80,17 @@ public class AdminPostController {
             @PathVariable String postId
     ) {
         adminPostService.unblind(postId);
+    }
+
+    @GetMapping("/{postId}/detail")
+    @Operation(
+            summary = "관리자용 게시글 상세 조회",
+            description = "게시글 정보와 댓글/대댓글 전체를 포함하여 조회합니다. (삭제/블라인드 포함)"
+    )
+    public PostAdminDetailDTO getPostDetail(
+            @Parameter(description = "조회할 게시글 ID", required = true)
+            @PathVariable String postId
+    ) {
+        return adminPostService.getPostDetail(postId);
     }
 }
