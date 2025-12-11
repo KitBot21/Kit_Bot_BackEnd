@@ -26,10 +26,7 @@ public class NoticeKeywordController {
 
     private final NoticeKeywordSubscriptionService subService;
 
-    /**
-     * 1) 고정 키워드 전체 조회
-     * 프론트 키워드 선택 UI용
-     */
+
     @Operation(summary = "고정 키워드 목록 조회", description = "프로그램에서 미리 정의한 N개(현재 5개)의 공지 키워드 조회")
     @GetMapping
     public List<NoticeKeywordItemDto> getKeywordList() {
@@ -38,9 +35,7 @@ public class NoticeKeywordController {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 2) 내 구독 목록 조회
-     */
+
     @Operation(summary = "내 구독 키워드 조회", description = "현재 로그인한 사용자가 구독 중인 공지 키워드 목록 조회")
     @GetMapping("/me")
     public List<MyKeywordSubscriptionDto> getMySubscriptions(Principal principal) {
@@ -53,10 +48,7 @@ public class NoticeKeywordController {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 3) 특정 키워드 토글
-     * ex) PATCH /api/notice-keywords/SCHOLARSHIP/toggle
-     */
+
     @Operation(summary = "키워드 구독 토글", description = "특정 공지 키워드를 구독/해제 토글, 구독 정보가 없으면 새로 생성")
     @PatchMapping("/{keyword}/toggle")
     public ToggleKeywordResponseDto toggleKeyword(
@@ -72,10 +64,7 @@ public class NoticeKeywordController {
         );
     }
 
-    /**
-     * 4) (선택) 여러 키워드 일괄 저장
-     * enabledKeywords = ["SCHOLARSHIP", "EVENT"] 형식
-     */
+
     @Operation(summary = "구독 키워드 일괄 저장", description = "enabledKeywords에 포함된 키워드만 구독 활성화")
     @PutMapping("/me")
     public SaveMyKeywordsResponseDto saveAll(

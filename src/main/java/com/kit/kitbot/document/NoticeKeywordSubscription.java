@@ -22,9 +22,9 @@ public class NoticeKeywordSubscription {
     @Id
     private String id;
 
-    private String userId;          // 구독한 사용자
-    private NoticeKeyword keyword;  // 고정 5개 중 하나
-    private boolean enabled;        // on/off
+    private String userId;
+    private NoticeKeyword keyword;
+    private boolean enabled;
 
     @Builder.Default
     private Instant createdAt = Instant.now();

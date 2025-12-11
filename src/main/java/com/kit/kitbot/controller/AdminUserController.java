@@ -12,9 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 관리자용 사용자 관리 컨트롤러
- */
+
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor

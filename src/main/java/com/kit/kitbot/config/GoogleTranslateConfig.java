@@ -14,7 +14,6 @@ public class GoogleTranslateConfig {
 
     @Bean
     public Translate googleTranslate() throws IOException {
-        // resources 폴더에 있는 파일을 읽어옵니다.
         ClassPathResource resource = new ClassPathResource("google-trans-key.json");
 
         GoogleCredentials credentials = GoogleCredentials.fromStream(resource.getInputStream());

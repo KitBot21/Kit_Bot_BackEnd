@@ -16,7 +16,7 @@ import java.util.Map;
 public class EmailController {
 
     private final EmailService emailService;
-    private final JwtTokenProvider jwtTokenProvider;  // 추가
+    private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/send")
     public ResponseEntity<?> sendEmail(@RequestBody Map<String, String> body) {
@@ -31,7 +31,6 @@ public class EmailController {
             emailService.sendVerificationEmail(studentId, googleEmail);
             return ResponseEntity.ok("인증번호가 발송되었습니다.");
         } catch (IllegalStateException e) {
-            // 이미 인증된 학교 메일인 경우
             Map<String, String> error = new HashMap<>();
             error.put("message", e.getMessage());
             return ResponseEntity.status(400).body(error);
@@ -47,14 +46,12 @@ public class EmailController {
         User user = emailService.verifyCode(studentId, code, googleEmail);
 
         if (user != null) {
-            // 새 토큰 발급 (role: kumoh 포함)
             String newToken = jwtTokenProvider.createToken(
                     user.getId(),
                     user.getGoogleEmail(),
                     user.getRole().name()
             );
 
-            // 응답 데이터 구성
             Map<String, Object> response = new HashMap<>();
             response.put("accessToken", newToken);
 

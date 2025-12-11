@@ -46,14 +46,14 @@ public class NoticeKeywordNotifyService {
                             String pushToken = user.getPushToken();
                             log.info("유저 찾음! email: {}, pushToken: {}", userId, pushToken);
 
-                            // 👇 여기 조건 수정
+
                             Boolean notificationEnabled = user.getNotificationEnabled();
                             if (pushToken != null && !pushToken.isEmpty()
                                     && (notificationEnabled == null || notificationEnabled)) {
 
                                 boolean sent = notificationService.sendPush(
                                         pushToken,
-                                        "🔔 새 공지 알림",
+                                        " 새 공지 알림",
                                         request.getTitle(),
                                         request.getUrl()
                                 );

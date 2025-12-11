@@ -24,16 +24,16 @@ public class Notification {
 
     private String userId;
 
-    private String type;        // "NOTICE_KEYWORD_MATCH"
-    private String keyword;     // "SCHOLARSHIP" 같은 enum name 저장
-    private String noticeId;    // 크롤링 공지 id
-    private String title;       // 공지 제목
+    private String type;
+    private String keyword;
+    private String noticeId;
+    private String title;
 
     @Builder.Default
-    private boolean pushed = false; // 실제 푸시 성공 여부
+    private boolean pushed = false;
 
     @Builder.Default
-    private boolean read = false;   // (나중에 알림함용)
+    private boolean read = false;
 
     @Builder.Default
     private Instant createdAt = Instant.now();

@@ -87,14 +87,14 @@ public class QnaService {
             log.info("답변 번역됨: {} -> {}", aiAnswer, finalAnswer);
         }
 
-        // 👇 수정: 새 필드 추가
+
         return new QueryResponseDTO(
                 finalAnswer,
                 sources,
                 ragResponse.isDate(),
-                ragResponse.getStartDate(),      // startDate 먼저
-                ragResponse.getEndDate(),        // endDate
-                ragResponse.getScheduleTitle()   // scheduleTitle 마지막
+                ragResponse.getStartDate(),
+                ragResponse.getEndDate(),
+                ragResponse.getScheduleTitle()
         );
     }
 

@@ -1,4 +1,3 @@
-// src/main/java/com/kit/kitbot/controller/AdminCommentController.java
 package com.kit.kitbot.controller;
 
 import com.kit.kitbot.service.CommentService;

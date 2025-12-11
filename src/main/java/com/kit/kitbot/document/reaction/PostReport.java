@@ -18,6 +18,6 @@ public class PostReport {
     private String id;
     private String postId;
     private String userId;
-    private String reason;     // 선택
+    private String reason;
     private Instant createdAt;
 }

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CrawlerRequestDTO {
-    private String url;     // 게시글 URL
-    private String keyword; // 예: "SCHOLARSHIP", "DORM" (Enum 이름과 일치해야 함)
-    private String title;   // 게시글 제목
+    private String url;
+    private String keyword;
+    private String title;
 }

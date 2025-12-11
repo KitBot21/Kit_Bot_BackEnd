@@ -22,7 +22,7 @@ public class UserService {
     private final UserRepository userRepository;
 
     public SetUsernameResponse setUsername(String userId, SetUsernameRequest request) {
-        // 1. 사용자 찾기
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
@@ -31,12 +31,12 @@ public class UserService {
         if(newNickName != user.getUsername()){
 
         }
-        // 3. 닉네임 중복 체크
+
         if(!newNickName.equals(user.getUsername()) && userRepository.existsByUsername(newNickName)){
             return new SetUsernameResponse(false,"이미 사용중인 닉네임입니다.", null);
         }
 
-        // 4. 닉네임 설정
+
         user.setUsername(newNickName);
         User savedUser = userRepository.save(user);
 
@@ -49,13 +49,13 @@ public class UserService {
         );
     }
 
-    // 닉네임 중복 체크 API용
+
     public boolean isUsernameAvailable(String username) {
         return !userRepository.existsByUsername(username);
     }
 
     public void updatePushToken(String userId, String pushToken) {
-        // 1. 같은 pushToken 가진 다른 유저들 토큰 제거
+
         if (pushToken != null) {
             List<User> usersWithSameToken = userRepository.findAllByPushToken(pushToken);
             for (User u : usersWithSameToken) {
@@ -67,7 +67,7 @@ public class UserService {
             }
         }
 
-        // 2. 현재 유저에게 저장
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
@@ -80,15 +80,15 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-        // 이미 탈퇴한 사용자인지 확인
+
         if (user.getStatus() == User.Status.deleted) {
             throw new RuntimeException("이미 탈퇴한 사용자입니다.");
         }
 
-        // Soft Delete 처리
+
         user.setStatus(User.Status.deleted);
         user.setDeletedAt(Instant.now());
-        user.setPushToken(null);  // 푸시 토큰 삭제
+        user.setPushToken(null);
 
         userRepository.save(user);
         log.info("회원 탈퇴 처리 완료: userId={}", userId);

@@ -9,7 +9,6 @@ public interface NotificationRepository extends MongoRepository<Notification, St
 
     boolean existsByUserIdAndNoticeIdAndKeyword(String userId, String noticeId, String keyword);
 
-    // 👇 추가
     List<Notification> findByUserIdOrderByCreatedAtDesc(String userId);
 
     long countByUserIdAndReadFalse(String userId);

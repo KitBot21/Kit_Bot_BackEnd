@@ -9,7 +9,7 @@ import java.util.Collection;
 @Getter
 public class CustomUserDetails extends User {
 
-    private final String userId;  // 👈 MongoDB ObjectId
+    private final String userId;
 
     public CustomUserDetails(String email, String userId, Collection<? extends GrantedAuthority> authorities) {
         super(email, "", authorities);

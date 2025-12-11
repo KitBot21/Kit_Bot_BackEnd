@@ -10,15 +10,15 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TranslationService {
 
-    private final Translate translate; // 위에서 만든 설정(Bean)이 주입됨
+    private final Translate translate;
 
     public String detectLanguage(String text) {
         try {
             Detection detection = translate.detect(text);
-            return detection.getLanguage(); // "en", "ko", "ja" 등을 반환
+            return detection.getLanguage();
         } catch (Exception e) {
             e.printStackTrace();
-            return "ko"; // 에러나면 기본적으로 한국어로 간주
+            return "ko";
         }
     }
 
@@ -26,12 +26,12 @@ public class TranslationService {
         try {
             Translation translation = translate.translate(
                     text,
-                    Translate.TranslateOption.sourceLanguage(sourceLang), // 예: "en"
-                    Translate.TranslateOption.targetLanguage(targetLang)  // 예: "ko"
+                    Translate.TranslateOption.sourceLanguage(sourceLang),
+                    Translate.TranslateOption.targetLanguage(targetLang)
             );
             return translation.getTranslatedText();
         } catch (Exception e) {
-            // 에러 발생 시 로그 찍고 원본 텍스트 반환 (혹은 예외 던지기)
+
             e.printStackTrace();
             return text;
         }

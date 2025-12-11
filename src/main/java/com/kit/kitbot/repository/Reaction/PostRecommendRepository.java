@@ -3,7 +3,7 @@ package com.kit.kitbot.repository.Reaction;
 import com.kit.kitbot.document.reaction.PostRecommend;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import java.util.List; // 👈 [추가]
+import java.util.List;
 import java.util.Optional;
 
 public interface PostRecommendRepository extends MongoRepository<PostRecommend, String> {

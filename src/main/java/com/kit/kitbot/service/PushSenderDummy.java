@@ -13,6 +13,6 @@ public class PushSenderDummy implements PushSender {
                 ", noticeId=" + noticeId +
                 ", title=" + title);
 
-        return true; // 항상 성공 처리
+        return true;
     }
 }

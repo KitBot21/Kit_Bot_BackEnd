@@ -8,8 +8,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class NoticeKeywordItemDto {
-    private String key;   // "SCHOLARSHIP"
-    private String label; // "장학"
+    private String key;
+    private String label;
 
     public static NoticeKeywordItemDto from(NoticeKeyword kw) {
         return NoticeKeywordItemDto.builder()

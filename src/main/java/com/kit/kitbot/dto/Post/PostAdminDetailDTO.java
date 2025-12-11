@@ -52,10 +52,9 @@ public class PostAdminDetailDTO {
     public static PostAdminDetailDTO of(
             Post post,
             List<Comment> comments,
-            Map<String, String> userIdToNickname // (아래 2번에서 설명)
+            Map<String, String> userIdToNickname
     ) {
 
-        // 1) Comment → CommentNode(flat)
         Map<String, CommentNode> nodeMap = new LinkedHashMap<>();
         for (Comment c : comments) {
             CommentNode node = CommentNode.builder()
@@ -64,7 +63,7 @@ public class PostAdminDetailDTO {
                     .authorId(c.getAuthorId())
                     .authorNickname(userIdToNickname.getOrDefault(
                             c.getAuthorId(),
-                            c.getAuthorId()          // 닉네임 없으면 id 표시
+                            c.getAuthorId()
                     ))
                     .parentId(c.getParentId())
                     .content(c.getContent())
@@ -72,12 +71,11 @@ public class PostAdminDetailDTO {
                     .reportCount(c.getReportCount())
                     .createdAt(c.getCreatedAt())
                     .status(c.getStatus())
-                    .children(new ArrayList<>())   // ✅ 꼭 가변 리스트로!
+                    .children(new ArrayList<>())
                     .build();
             nodeMap.put(node.getId(), node);
         }
 
-        // 2) 부모-자식 연결
         List<CommentNode> roots = new ArrayList<>();
         for (CommentNode node : nodeMap.values()) {
             String parentId = node.getParentId();

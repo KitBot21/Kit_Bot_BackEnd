@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-// CommentResponseDTO.java
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,6 +22,6 @@ public class CommentResponseDTO {
     private Integer reportCount;
     private LocalDateTime createdAt;
     private String status;
-    private Boolean isRecommended;  // 추가
-    private Boolean isReported;     // 추가
+    private Boolean isRecommended;
+    private Boolean isReported;
 }

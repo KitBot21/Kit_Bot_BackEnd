@@ -15,11 +15,10 @@ public class RagWebClient {
 
     private final WebClient webClient;
 
-    // application.properties에서 주소를 가져옵니다.
     public RagWebClient(@Value("${rag.server.url}") String ragUrl) {
         this.webClient = WebClient.builder()
                 .baseUrl(ragUrl)
-                .defaultHeader("ngrok-skip-browser-warning", "true")  // 이거 추가
+                .defaultHeader("ngrok-skip-browser-warning", "true")
                 .build();
     }
 
@@ -34,7 +33,6 @@ public class RagWebClient {
                 .timeout(Duration.ofSeconds(60))
                 .block();
 
-        // 응답 로그 추가
         log.info("RAG 서버 응답: {}", response);
 
         return response;

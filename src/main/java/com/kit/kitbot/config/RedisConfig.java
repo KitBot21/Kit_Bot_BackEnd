@@ -11,7 +11,6 @@ public class RedisConfig {
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        // host/port는 application.properties 기준
         return new LettuceConnectionFactory();
     }
 

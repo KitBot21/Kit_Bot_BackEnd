@@ -4,7 +4,7 @@ import com.kit.kitbot.document.Post.Status;
 import com.kit.kitbot.dto.Post.CursorListResponseDTO;
 import com.kit.kitbot.dto.Post.PostRequestDTO;
 import com.kit.kitbot.dto.Post.PostResponseDTO;
-import com.kit.kitbot.security.CustomUserDetails;  // 👈 추가
+import com.kit.kitbot.security.CustomUserDetails;
 import com.kit.kitbot.service.PostService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;  // 👈 추가
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.EnumSet;

@@ -17,9 +17,8 @@ public class Query {
     private String question;
     private String lang;
 
-    // 🔽 새로 추가
-    private List<String> answerKeywords; // 답변 키워드 리스트
-    private LocalDateTime createdAt;     // 질문 시각 기록
+    private List<String> answerKeywords;
+    private LocalDateTime createdAt;
 
     public Query(String question, String lang) {
         this.question = question;
