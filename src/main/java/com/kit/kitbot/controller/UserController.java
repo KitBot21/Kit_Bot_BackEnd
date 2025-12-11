@@ -23,13 +23,11 @@ public class UserController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    // 닉네임 설정
     @PostMapping("/username")
     public ResponseEntity<SetUsernameResponse> setUsername(
             @RequestHeader("Authorization") String token,
             @Valid @RequestBody SetUsernameRequest request
     ) {
-        // JWT 토큰에서 userId 추출
         String userId = getUserIdFromToken(token);
 
         SetUsernameResponse response = userService.setUsername(userId, request);
@@ -41,7 +39,6 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // 닉네임 중복 체크
     @GetMapping("/username/check")
     public ResponseEntity<Map<String, Boolean>> checkUsername(
             @RequestParam String username
@@ -50,7 +47,6 @@ public class UserController {
         return ResponseEntity.ok(Map.of("available", available));
     }
 
-    // 토큰에서 userId 추출 헬퍼 메서드
     private String getUserIdFromToken(String token) {
         String actualToken = token.replace("Bearer ", "");
         return jwtTokenProvider.getUserIdFromToken(actualToken);
@@ -61,17 +57,14 @@ public class UserController {
             @RequestHeader("Authorization") String token,
             @RequestBody Map<String, String> requestBody
     ) {
-        // 1. 토큰에서 유저 ID 추출 (기존 헬퍼 메서드 재사용)
         String userId = getUserIdFromToken(token);
 
-        // 2. Body에서 푸시 토큰 꺼내기
         String pushToken = requestBody.get("pushToken");
 
         if (pushToken == null || pushToken.isEmpty()) {
             return ResponseEntity.badRequest().body("토큰이 없습니다.");
         }
 
-        // 3. 서비스 호출
         userService.updatePushToken(userId, pushToken);
 
         return ResponseEntity.ok("푸시 토큰이 저장되었습니다.");
@@ -103,7 +96,6 @@ public class UserController {
         return ResponseEntity.ok(Map.of("success", true, "notificationEnabled", enabled));
     }
 
-    // DELETE /api/user/push-token 추가
     @DeleteMapping("/api/user/push-token")
     public ResponseEntity<?> deletePushToken(@AuthenticationPrincipal UserDetails userDetails) {
         userService.deletePushToken(userDetails.getUsername());

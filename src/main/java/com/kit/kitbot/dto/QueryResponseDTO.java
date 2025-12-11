@@ -11,7 +11,7 @@ public class QueryResponseDTO {
     private String answer;
     private List<SourceDTO> sources;
 
-    @JsonProperty("isDate")  // 👈 추가
+    @JsonProperty("isDate")
     private boolean isDate;
 
     private String startDate;

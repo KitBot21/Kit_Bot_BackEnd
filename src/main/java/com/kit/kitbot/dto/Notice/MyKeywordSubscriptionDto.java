@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class MyKeywordSubscriptionDto {
-    private String keyword;   // "SCHOLARSHIP"
+    private String keyword;
     private boolean enabled;
 
     public static MyKeywordSubscriptionDto from(NoticeKeywordSubscription sub) {

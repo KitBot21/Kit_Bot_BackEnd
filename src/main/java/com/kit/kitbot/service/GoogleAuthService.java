@@ -34,22 +34,22 @@ public class GoogleAuthService {
 
     public AuthResponse loginWithGoogle(String idToken) {
         try {
-            // 1단계: Google ID 토큰 검증
+
             log.info("Google ID 토큰 검증 시작");
             GoogleIdToken.Payload payload = verifyGoogleToken(idToken);
 
-            // 2단계: 토큰에서 사용자 정보 추출
-            String googleId = payload.getSubject();         // Google 고유 ID
-            String email = payload.getEmail();              // 이메일
-            String name = (String) payload.get("name");     // 이름
-            String picture = (String) payload.get("picture"); // 프로필 사진
+
+            String googleId = payload.getSubject();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+            String picture = (String) payload.get("picture");
 
             log.info("Google 사용자 정보: email={}, name={}", email, name);
 
-            // 3단계: DB에서 사용자 찾기 or 생성
+
             User user = userRepository.findByGoogleEmail(email)
                     .map(existingUser -> {
-                        // 탈퇴한 사용자가 다시 로그인하면 복구
+
                         if (existingUser.getStatus() == User.Status.deleted) {
                             log.info("탈퇴 사용자 복구: {}", email);
                             existingUser.setStatus(User.Status.active);
@@ -62,12 +62,12 @@ public class GoogleAuthService {
                         log.info("신규 사용자 생성: {}", email);
                         return createNewUser(googleId, email, name, picture);
                     });
-            // 4단계: 우리 서비스의 JWT 토큰 생성
+
             String accessToken = jwtTokenProvider.createToken(user.getId(), user.getGoogleEmail(), user.getRole().name());
 
             log.info("로그인 성공: userId={}", user.getId());
 
-            // 5단계: 응답 반환
+
             return AuthResponse.builder()
                     .accessToken(accessToken)
                     .user(UserDto.from(user))
@@ -79,7 +79,7 @@ public class GoogleAuthService {
         }
     }
 
-    // Google ID 토큰이 진짜인지 검증
+
     private GoogleIdToken.Payload verifyGoogleToken(String idToken) throws Exception {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(),
@@ -97,7 +97,7 @@ public class GoogleAuthService {
         return googleIdToken.getPayload();
     }
 
-    // 새 사용자 생성 후 DB 저장
+
     private User createNewUser(String googleId, String email, String name, String picture) {
         User user = User.fromGoogleOAuth(googleId, email, name, picture);
         return userRepository.save(user);

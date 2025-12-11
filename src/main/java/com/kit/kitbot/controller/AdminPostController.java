@@ -14,9 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 관리자용 게시글 관리 컨트롤러
- */
+
 @RestController
 @RequestMapping("/api/admin/posts")
 @RequiredArgsConstructor

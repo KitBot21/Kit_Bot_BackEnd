@@ -15,7 +15,6 @@ public class CrawlerController {
 
     private final NoticeKeywordNotifyService notifyService;
 
-    // 파이썬 크롤러가 호출하는 주소
     @PostMapping("/notification")
     public ResponseEntity<String> receiveNotification(@RequestBody CrawlerRequestDTO request) {
         log.info("크롤링 알림 수신: [{}] {}", request.getKeyword(), request.getTitle());

@@ -1,4 +1,3 @@
-// CommentReportRepository.java
 package com.kit.kitbot.repository.Post;
 
 import com.kit.kitbot.document.CommentReport;

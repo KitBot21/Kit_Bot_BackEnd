@@ -14,7 +14,7 @@ public class AdminUserService {
     private final UserRepository userRepository;
 
     public Page<User> searchUsers(String keyword, String role, String status, Pageable pageable) {
-        // 일단은 전체 조회만, 나중에 필터/검색 추가
+
         return userRepository.findAll(pageable);
     }
 
@@ -22,7 +22,7 @@ public class AdminUserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
 
-        user.block();          // User 도큐먼트에 추가한 메서드
+        user.block();
         userRepository.save(user);
     }
 
@@ -30,7 +30,7 @@ public class AdminUserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
 
-        user.activate();       // User 도큐먼트에 추가한 메서드
+        user.activate();
         userRepository.save(user);
     }
 }

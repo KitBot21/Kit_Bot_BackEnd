@@ -22,7 +22,7 @@ public class User {
 
     private String googleId;
     private String schoolEmail;
-    private String username;        // null로 시작, 나중에 사용자가 설정
+    private String username;
     private Role role;
     private Status status;
     private Instant createdAt;
@@ -31,7 +31,7 @@ public class User {
     private String pushToken;
     private List<String> keywords;
     private Instant deletedAt;
-    private Boolean notificationEnabled;  // 👈 추가
+    private Boolean notificationEnabled;
 
     public enum Role { guest, kumoh, admin }
     public enum Status { active, blocked, deleted }
@@ -47,12 +47,11 @@ public class User {
                 .build();
     }
 
-    // Google OAuth 로그인용 - username은 null로 시작
     public static User fromGoogleOAuth(String googleId, String email, String name, String picture) {
         return User.builder()
                 .googleId(googleId)
                 .googleEmail(email)
-                .username(null)  // 닉네임은 나중에 설정
+                .username(null)
                 .profileImg(picture != null ? picture : "/static/images/default_profile.png")
                 .role(Role.guest)
                 .status(Status.active)
@@ -62,7 +61,6 @@ public class User {
                 .build();
     }
 
-    // 닉네임 설정 여부 확인
     public boolean hasUsername() {
         return username != null && !username.trim().isEmpty();
     }

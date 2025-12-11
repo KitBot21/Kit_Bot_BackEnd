@@ -35,7 +35,6 @@ public class JwtTokenProvider {
         this.userRepository = userRepository;
     }
 
-    // JWT 토큰 생성 (role 포함)
     public String createToken(String userId, String email, String role) {
         Claims claims = Jwts.claims().setSubject(email);
         claims.put("userId", userId);
@@ -52,7 +51,6 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    // 토큰에서 이메일 추출
     public String getEmailFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(secretKey)
@@ -62,7 +60,6 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
-    // 토큰 유효성 검증
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -96,11 +93,9 @@ public class JwtTokenProvider {
             throw new UsernameNotFoundException("토큰에 userId 정보가 없습니다.");
         }
 
-        // DB에서 유저 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
 
-        // 정지/탈퇴 상태 체크
         if (user.getStatus() == User.Status.blocked) {
             throw new DisabledException("정지된 계정입니다.");
         }
@@ -108,7 +103,6 @@ public class JwtTokenProvider {
             throw new DisabledException("탈퇴된 계정입니다.");
         }
 
-        // DB 기준 role 사용
         String role = user.getRole().name();
         List<SimpleGrantedAuthority> authorities =
                 Collections.singletonList(new SimpleGrantedAuthority(role));

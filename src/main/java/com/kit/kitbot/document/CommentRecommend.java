@@ -1,4 +1,3 @@
-// CommentRecommend.java
 package com.kit.kitbot.document;
 
 import lombok.Data;

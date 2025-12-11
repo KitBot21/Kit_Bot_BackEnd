@@ -62,7 +62,7 @@ public class CommentService {
                 .id(saved.getId())
                 .postId(saved.getPostId())
                 .authorId(saved.getAuthorId())
-                .authorName(resolveAuthorName(saved.getAuthorId()))  // 이렇게 변경
+                .authorName(resolveAuthorName(saved.getAuthorId()))
                 .content(saved.getContent())
                 .parentId(saved.getParentId())
                 .recommendCount(saved.getRecommendCount())
@@ -79,26 +79,24 @@ public class CommentService {
 
         return allComments.stream()
                 .filter(comment -> comment.getParentId() == null)
-                .map(comment -> convertToResponse(comment, currentUserId))  // 파라미터 전달
+                .map(comment -> convertToResponse(comment, currentUserId))
                 .toList();
     }
 
     public List<CommentResponseDTO> getReplies(String parentId, String currentUserId) {
         List<Comment> replies = commentRepository.findByParentIdAndStatus(parentId, "active");
         return replies.stream()
-                .map(comment -> convertToResponse(comment, currentUserId))  // 파라미터 전달
+                .map(comment -> convertToResponse(comment, currentUserId))
                 .toList();
     }
 
-    // ← 이 메서드 추가!
-    // CommentService.java
+
     private CommentResponseDTO convertToResponse(Comment comment, String currentUserId) {
 
 
         boolean isRecommended = false;
         boolean isReported = false;
 
-        // currentUserId가 있을 때만 확인
         if (currentUserId != null && !currentUserId.isEmpty()) {
             isRecommended = commentRecommendRepository
                     .findByCommentIdAndUserId(comment.getId(), currentUserId) != null;
@@ -110,7 +108,7 @@ public class CommentService {
                 .id(comment.getId())
                 .postId(comment.getPostId())
                 .authorId(comment.getAuthorId())
-                .authorName(resolveAuthorName(comment.getAuthorId()))  // 이렇게 변경
+                .authorName(resolveAuthorName(comment.getAuthorId()))
                 .content(comment.getContent())
                 .parentId(comment.getParentId())
                 .recommendCount(comment.getRecommendCount())
@@ -121,7 +119,7 @@ public class CommentService {
                 .isReported(isReported)
                 .build();
     }
-    // CommentService.java
+
 
     public void toggleRecommendComment(String commentId, String userId) {
         Comment comment = commentRepository.findById(commentId)
@@ -158,52 +156,47 @@ public class CommentService {
         commentRepository.save(comment);
     }
 
-    // 댓글 삭제
+
     public void deleteComment(String commentId, String userId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("댓글을 찾을 수 없습니다"));
 
-        // 권한 확인 (본인의 댓글만 삭제 가능)
-        // if (!comment.getAuthorId().equals(userId)) {
-        //     throw new RuntimeException("댓글 삭제 권한이 없습니다");
-        // }
 
-        // 이미 삭제된 댓글인지 확인
         if ("deleted".equals(comment.getStatus())) {
             throw new RuntimeException("이미 삭제된 댓글입니다");
         }
 
-        // 소프트 삭제 (status를 deleted로 변경)
+
         comment.setStatus("deleted");
         comment.setUpdatedAt(LocalDateTime.now());
         commentRepository.save(comment);
 
-        // 게시글의 댓글 수 감소
+
         Post post = postRepository.findById(comment.getPostId())
                 .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
         post.setCommentCount(Math.max(0, post.getCommentCount() - 1));
         postRepository.save(post);
     }
 
-    /** 관리자용 강제 soft delete (작성자와 무관) */
+
     public void softDeleteByAdmin(String commentId, String adminId, String reason) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("댓글을 찾을 수 없습니다"));
 
-        // 이미 deleted면 그냥 리턴해도 되고, 아니면 예외 던져도 됨
+
         if ("deleted".equalsIgnoreCase(comment.getStatus())) {
             return;
         }
 
-        // 삭제 처리
+
         comment.setStatus("deleted");
         comment.setUpdatedAt(LocalDateTime.now());
-        // 필요하면 관리자가 남긴 이유를 blindedReason에 같이 넣어도 됨
-        comment.setBlindedReason(reason);  // 필드 이용 재활용
+
+        comment.setBlindedReason(reason);
 
         commentRepository.save(comment);
 
-        // 댓글 수 감소
+
         Post post = postRepository.findById(comment.getPostId())
                 .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
         post.setCommentCount(Math.max(0, post.getCommentCount() - 1));

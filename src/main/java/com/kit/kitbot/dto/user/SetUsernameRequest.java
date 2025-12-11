@@ -1,4 +1,3 @@
-// dto/SetUsernameRequest.java
 package com.kit.kitbot.dto.user;
 
 import lombok.Data;

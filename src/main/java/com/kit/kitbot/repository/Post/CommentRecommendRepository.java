@@ -1,4 +1,3 @@
-// CommentRecommendRepository.java
 package com.kit.kitbot.repository.Post;
 
 import com.kit.kitbot.document.CommentRecommend;

@@ -28,7 +28,7 @@ public class Comment {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    private String status = "active";  // active, blinded, deleted
+    private String status = "active";
     private LocalDateTime blindedAt;
     private String blindedReason;
 }

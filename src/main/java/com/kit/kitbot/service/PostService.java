@@ -40,7 +40,7 @@ public class PostService {
     private static final int DEFAULT_LIMIT = 10;
     private static final int MAX_LIMIT = 50;
 
-    // ---------------- 공통 유틸 ----------------
+
 
     private int normalizeLimit(Integer limit) {
         if (limit == null) return DEFAULT_LIMIT;
@@ -63,32 +63,12 @@ public class PostService {
         return last != null ? last.toString() : null;
     }
 
-//    private String resolveAuthorNickname(String authorId) {
-//        if (authorId == null || authorId.isBlank()) return null;
-//
-//        return userRepository.findById(authorId)
-//                .map(user -> {
-//                    // 닉네임으로 쓸 값 결정 로직
-//                    if (user.hasUsername()) {
-//                        return user.getUsername();          // ⭐ 사용자가 설정한 닉네임
-//                    }
-//                    // username 미설정이면 googleEmail 앞부분 같은 걸로 대체하거나,
-//                    // 그냥 고정 문구를 써도 됨
-//                    String email = user.getGoogleEmail();
-//                    if (email != null && !email.isBlank()) {
-//                        int at = email.indexOf('@');
-//                        return at > 0 ? email.substring(0, at) : email;
-//                    }
-//                    return "알 수 없는 사용자";
-//                })
-//                .orElse("탈퇴한 사용자");
-//    }
     private String resolveAuthorNickname(String authorId) {
         if (authorId == null || authorId.isBlank()) return null;
 
         return userRepository.findById(authorId)
             .map(user -> {
-                // ⭐ 탈퇴한 사용자 체크 추가!
+
                 if (user.getStatus() == User.Status.deleted) {
                     return "탈퇴한 사용자";
                 }
@@ -106,7 +86,7 @@ public class PostService {
             .orElse("탈퇴한 사용자");
     }
 
-    // ---------------- 조회 (커서) ----------------
+
 
     public CursorListResponseDTO<PostResponseDTO> getPostsCursor(String keyword, String after, Integer limit) {
         final int take = normalizeLimit(limit);
@@ -134,7 +114,7 @@ public class PostService {
         return new CursorListResponseDTO<>(items, nextCursor, hasNext);
     }
 
-    // ---------------- 단건 조회 ----------------
+
 
     @Transactional(readOnly = true)
     public Optional<PostResponseDTO> getPost(String id, Collection<Status> statuses, String currentUserId) {
@@ -142,7 +122,7 @@ public class PostService {
                 .map(post -> buildDtoWithUserData(post, currentUserId));
     }
 
-    // ---------------- 페이지네이션 조회 ----------------
+
 
     public Page<PostResponseDTO> getPostList(Collection<Status> statuses, Pageable pageable) {
         return postRepository.findByStatusIn(statuses, pageable)
@@ -160,7 +140,7 @@ public class PostService {
                 .map(post -> PostResponseDTO.from(post, resolveAuthorNickname(post.getAuthorId())));
     }
 
-    // ---------------- 생성/수정/삭제 ----------------
+
 
     @Transactional
     public PostResponseDTO createPost(PostRequestDTO req) {
@@ -239,7 +219,6 @@ public class PostService {
         return buildDtoWithUserData(updated, requesterId);
     }
 
-    // ---------------- 추천/신고 ----------------
 
     private void ensureUpdatable(Post post) {
         if (post.getStatus() == Status.DELETED) {
@@ -273,7 +252,7 @@ public class PostService {
                 postRecommendRepository.save(rec);
                 postRepository.incRecommendCount(postId, +1);
             } catch (DuplicateKeyException e) {
-                // 중복 추천은 무시
+
             }
         }
         return buildDtoWithUserData(mustFind(postId), userId);
@@ -299,7 +278,7 @@ public class PostService {
                 postRepository.incReportCount(postId, +1);
                 autoBlindIfNeeded(postId);
             } catch (DuplicateKeyException e) {
-                // 중복 신고는 무시
+
             }
         }
         return buildDtoWithUserData(mustFind(postId), userId);
@@ -312,7 +291,7 @@ public class PostService {
         }
     }
 
-    // ---------------- 관리자 블라인드 ----------------
+
 
     @Transactional
     public PostResponseDTO adminBlind(String postId, String reason) {
@@ -337,14 +316,14 @@ public class PostService {
         return buildDtoWithUserData(mustFind(postId), null);
     }
 
-    // ---------------- DTO 빌드 ----------------
+
 
     private PostResponseDTO buildDtoWithUserData(Post post, String currentUserId) {
         if (post == null) return null;
 
         String authorNickname = resolveAuthorNickname(post.getAuthorId());
 
-        // 로그인 정보가 없으면 추천/신고 여부 계산 안 함
+
         if (currentUserId == null || currentUserId.isBlank()) {
             return PostResponseDTO.from(post, authorNickname);
         }

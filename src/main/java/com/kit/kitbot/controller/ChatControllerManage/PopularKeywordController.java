@@ -34,10 +34,7 @@ public class PopularKeywordController {
         this.popularQuestionService = popularQuestionService;
     }
 
-    /**
-     * 🔹 (개발/테스트용) 임의 키워드들 카운트 올리기
-     * body 예: ["수강신청", "수강신청 일정", "기숙사 환불"]
-     */
+
     @Operation(
             summary = "키워드 집계 테스트 (개발용)",
             description = """
@@ -66,9 +63,7 @@ public class PopularKeywordController {
         statService.increaseByRawKeywords(keywords);
     }
 
-    /**
-     * 🔹 오늘 기준 실시간 답변 키워드 Top N 조회
-     */
+
     @Operation(
             summary = "실시간 인기 답변 키워드 Top N 조회",
             description = """
@@ -99,12 +94,7 @@ public class PopularKeywordController {
         return statService.getTodayTop(size);
     }
 
-    /**
-     * 🔹 특정 키워드에 대해, 해당 키워드로 답변된 "가장 최근 질문" 1개 조회
-     *
-     * (실시간 인기 키워드 Top5에서 키워드 클릭 시,
-     *  이 API로 최신 질문을 받아와서 자동 질문에 재사용할 수 있음)
-     */
+
     @Operation(
             summary = "키워드별 최신 질문 1개 조회",
             description = """

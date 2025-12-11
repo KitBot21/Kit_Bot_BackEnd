@@ -49,9 +49,7 @@ public class AnswerKeywordStatService {
         }
     }
 
-    /**
-     * 🔹 오늘 기준 상위 N개 키워드 조회 (오늘 없으면 최근 7일까지 확인)
-     */
+
     public List<PopularKeywordDto> getTodayTop(int limit) {
         if (limit <= 0) {
             return List.of();
